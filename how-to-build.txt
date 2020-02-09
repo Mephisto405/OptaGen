@@ -1,0 +1,25 @@
+Test environment:
+* OptiX version 5.1.1
+* GPU, driver, and CUDA toolkit supported by OptiX, as specified in the OptiX Release Notes
+* Microsoft Visual Studio: VS 2013
+* CMake (http://www.cmake.org/cmake/resources/software.html)
+
+Instructions:
+
+1. Start up cmake-gui.
+2. Click "Browse Source..." and select the "src" directory from OptaGen as the source file location.
+    (E.g., C:/Users/<username>/OptaGen/src)
+3. Create a build directory manually via Windows File Explorer.
+    (E.g., C:/Users/<username>/OptaGen/build)
+
+4. Press "Configure" button and select the version of Visual Studio you with to use. Select proper complier version also. Click "Finish". Then configuration process will start automatically.
+    (E.g., Visual Studio 12 2013, x64)
+5. While configurating, you might face some interruption. In this case, 
+    * Set OptiX_INSTALL_DIR to wherever you installed OptiX.
+         (E.g., C:\ProgramData\NVIDIA Corporation\OptiX SDK <version>)
+    * Press "Configure" again.
+6. Press "Generate".
+
+7. Open the OptaGen.sln solution file in the build directory you created in the step 3 on your Visual Studio.
+8. Press "F7" (or click "Build Solution" in the "Build" tap).
+9. If the Visual Studio ask you to reload your projects, please do so. Since some dependencies are automatically handled for CUDA compilation in VS, it will likely ask you to do this.
