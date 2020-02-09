@@ -1094,12 +1094,11 @@ int main( int argc, char** argv )
 
 		if (!random)
 		{
-			// Axis-aligned bounding box (aabb) setup
-			std::string aabb_txt_fn = scene_file.substr(0, scene_file.find_last_of("\\")) + "\\aabb.txt";
-			std::cerr << "Predefined aabb file: " << aabb_txt_fn << std::endl;
-
-			srand(static_cast <unsigned> (time(0)));
-			sutil::Camera camera = setRandomCameraParams(aabb, aabb_txt_fn);
+			sutil::Camera camera(
+				scene->properties.width, scene->properties.height, scene->properties.vfov,
+				&scene->properties.camera_eye.x, &scene->properties.camera_lookat.x, &scene->properties.camera_up.x,
+				context["eye"], context["U"], context["V"], context["W"]
+				);
 
 			if (out_file.empty() || visual)
 			{
