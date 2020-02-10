@@ -39,12 +39,13 @@ struct PerRayData_radiance
   bool done;
   bool inShadow;
   bool specularBounce;
-  float3 radiance;
-  float3 normal; // normalized shading normal
-  float3 origin;
-  float3 bsdfDir;
-  float3 wo;
-  float3 throughput;
+  optix::float3 radiance;
+  optix::float3 normal; // normalized shading normal
+  optix::float3 albedo; // albedo
+  optix::float3 origin;
+  optix::float3 bsdfDir;
+  optix::float3 wo;
+  optix::float3 throughput;
   float pdf;
 };
 

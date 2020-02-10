@@ -52,6 +52,7 @@
 #include "light_parameters.h"
 #include "material_parameters.h"
 #include "properties.h"
+#include "path.h"
 #include <IL/il.h>
 #include <Camera.h>
 #include <OptiXMesh.h>
@@ -160,6 +161,11 @@ static Buffer getNormalBuffer()
 	return context["normal_buffer"]->getBuffer();
 }
 
+static Buffer getMBFBuffer()
+{
+	return context["mbf_buffer"]->getBuffer();
+}
+
 void destroyContext()
 {
     if( context )
@@ -187,11 +193,19 @@ void createContext( bool use_pbo, unsigned int max_depth )
     context["frame"]->setUint( 0u );
     context["scene_epsilon"]->setFloat( 1.e-3f );
 
-    Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_UNSIGNED_BYTE4, scene->properties.width, scene->properties.height, use_pbo );
+    Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_UNSIGNED_BYTE4, 
+		scene->properties.width, scene->properties.height, use_pbo );
     context["output_buffer"]->set( buffer );
 
-	Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3, scene->properties.width, scene->properties.height);
+	Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3,
+		scene->properties.width, scene->properties.height);
 	context["normal_buffer"]->set(normal_buffer);
+
+	/* Multiple-bounced feature buffer */
+	Buffer mbf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
+		scene->properties.width, scene->properties.height);
+	mbf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+	context["mbf_buffer"]->set(mbf_buffer); 
 
     // Accumulation buffer
     Buffer accum_buffer = context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
