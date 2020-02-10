@@ -155,6 +155,11 @@ static Buffer getOutputBuffer()
     return context[ "output_buffer" ]->getBuffer();
 }
 
+static Buffer getNormalBuffer()
+{
+	return context["normal_buffer"]->getBuffer();
+}
+
 void destroyContext()
 {
     if( context )
@@ -184,6 +189,9 @@ void createContext( bool use_pbo, unsigned int max_depth )
 
     Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_UNSIGNED_BYTE4, scene->properties.width, scene->properties.height, use_pbo );
     context["output_buffer"]->set( buffer );
+
+	Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3, scene->properties.width, scene->properties.height);
+	context["normal_buffer"]->set(normal_buffer);
 
     // Accumulation buffer
     Buffer accum_buffer = context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
@@ -910,10 +918,11 @@ void printUsageAndExit( const std::string& argv0 )
         "App Options:\n"
         "  -h | --help                  Print this usage message and exit. \n"
         "  -f | --file <output_file>    Save image to file and exit. \n"
-        "  -n | --nopbo                 Disable GL interop for display buffer. (off/on)\n"
+        "  -n | --nopbo                 Disable GL interop for display buffer. (off/on) \n"
+		"     | --normal                Save extra normal map of output image to file and exit. \n"
 		"  -s | --scene                 Provide a scene file for rendering. \n"
-		"  -p | --spp                   The number of samples per pixel. (default: 256)\n"
-		"  -v | --visual                Visual mode. (off: 0, on: otherwise, default: 0)\n"
+		"  -p | --spp                   The number of samples per pixel. (default: 256) \n"
+		"  -v | --visual                Visual mode. (off: 0, on: otherwise, default: 0) \n"
 		"  -r | --random                Random camera/materials/HDR envmap. (off/on) \n"
         "App Keystrokes:\n"
         "  q  Quit\n"
@@ -934,7 +943,10 @@ int main( int argc, char** argv )
 	std::string out_file;
 	unsigned int num_frames = 256; // Default
 	bool visual = false;
+	//
 	bool random = false;
+	bool normal = false;
+	//
     for( int i=1; i<argc; ++i )
     {
         const std::string arg(argv[i]);
@@ -995,6 +1007,10 @@ int main( int argc, char** argv )
         {
             use_pbo = false;
         }
+		else if (arg == "--normal")
+		{
+			normal = true;
+		}
 		else if (arg == "-r" || arg == "--random")
 		{
 			random = true;
@@ -1116,6 +1132,14 @@ int main( int argc, char** argv )
 				}
 				std::cerr << "time: " << sutil::currentTime() - startTime << std::endl;
 				sutil::writeBufferToFile(out_file.c_str(), getOutputBuffer());
+
+				if (normal)
+				{
+					std::string normal_file(out_file);
+					normal_file.insert(out_file.find('.'), "normal");
+					sutil::writeBufferToFile(normal_file.c_str(), getNormalBuffer());
+				}
+
 				std::cerr << "Wrote " << out_file <<  std::endl;
 				destroyContext();
 			}		

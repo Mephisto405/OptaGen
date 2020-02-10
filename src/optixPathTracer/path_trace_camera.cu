@@ -45,6 +45,7 @@ rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
 rtBuffer<uchar4, 2>              output_buffer;
+rtBuffer<float3, 2>              normal_buffer;
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
 rtDeclareVariable(unsigned int,  frame, , );
@@ -93,6 +94,7 @@ RT_PROGRAM void pinhole_camera()
 
 	// light from a light source or miss program
 	prd.radiance = make_float3( 0.0f );
+	prd.normal = make_float3(0.0f);
 
 	// next ray to be traced
 	prd.origin = make_float3( 0.0f );
@@ -107,6 +109,11 @@ RT_PROGRAM void pinhole_camera()
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
+
+		if (prd.depth == 0 && frame == 0)
+			normal_buffer[launch_index] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ? 
+										  prd.normal : 
+										  0.5f * normalize(prd.normal) + make_float3(0.5f); // normalize(prd.normal)
 
 		if (prd.done || prd.depth >= max_depth)
 			break;

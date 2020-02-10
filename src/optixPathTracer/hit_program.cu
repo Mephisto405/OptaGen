@@ -129,6 +129,7 @@ RT_PROGRAM void closest_hit()
 	prd.wo = -ray.direction;
 
 	prd.radiance += mat.emission * prd.throughput;
+	prd.normal = world_shading_normal;
 
 	//TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
