@@ -47,7 +47,7 @@ rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
 rtBuffer<uchar4, 2>              output_buffer;
 rtBuffer<float3, 2>              normal_buffer;
-rtBuffer<pathFeatures6, 2>       mbf_buffer; /* Multiple-bounced feature buffer */
+rtBuffer<pathFeatures6, 3>       mbf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
 rtDeclareVariable(unsigned int,  frame, , );
@@ -114,9 +114,6 @@ RT_PROGRAM void pinhole_camera()
 	prd.origin = make_float3( 0.0f );
 	prd.bsdfDir = make_float3(0.0f);
 
-	prd.normal = make_float3(0.0f);
-	prd.albedo = make_float3(0.0f);
-
 	float3 result = make_float3( 0.0f );
 
 	/* Path feature (length = 6) */
@@ -129,8 +126,9 @@ RT_PROGRAM void pinhole_camera()
 	// Main render loop. This is not recursive, and for high ray depths
 	// will generally perform better than tracing radiance rays recursively
 	// in closest hit programs.
-	for(;;) {
-		/* init in every ray shooting step */
+	for (;;) {
+		prd.normal = make_float3(0.0f);
+		prd.albedo = make_float3(0.0f);
 
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
 		prd.wo = -ray.direction;
@@ -142,14 +140,11 @@ RT_PROGRAM void pinhole_camera()
 		//								  0.5f * normalize(prd.normal) + make_float3(0.5f); // normalize(prd.normal)
 		
 		/* Path features */
-		if (frame == 0)
-		{
-			pf6.rad[prd.depth] = prd.radiance;
-			pf6.alb[prd.depth] = prd.albedo;
-			pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
-				prd.normal :
-				0.5f * normalize(prd.normal) + make_float3(0.5f);
-		}
+		pf6.rad[prd.depth] = LinearToSrgb(ToneMap(prd.radiance, 1.5));
+		pf6.alb[prd.depth] = prd.albedo;
+		pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
+			prd.normal :
+			0.5f * normalize(prd.normal) + make_float3(0.5f);
 
 		if (prd.done || prd.depth >= max_depth)
 			break;
@@ -177,9 +172,9 @@ RT_PROGRAM void pinhole_camera()
 	accum_buffer[launch_index] = acc_val;
 
 	/* Path feature buffer */
-	if (frame == 0)
-		normal_buffer[launch_index] = LinearToSrgb(ToneMap(pf6.rad[2], 1.5));
-	mbf_buffer[launch_index] = pf6;
+	if (frame == 3)
+		normal_buffer[launch_index] = pf6.nor[5]; //LinearToSrgb(ToneMap(pf6.rad[2], 1.5));
+	mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
 }
 
 RT_PROGRAM void exception()
@@ -188,7 +183,3 @@ RT_PROGRAM void exception()
 	rtPrintf( "Caught exception 0x%X at launch index (%d,%d)\n", code, launch_index.x, launch_index.y );
 	output_buffer[launch_index] = make_color( bad_color );
 }
-
-
-
-

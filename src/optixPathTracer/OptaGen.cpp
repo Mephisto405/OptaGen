@@ -63,6 +63,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <fstream>
 #include <dirent.h>
 #include <stdint.h>
 
@@ -89,9 +90,9 @@ double lastTime = 0;
 // Globals
 //
 //------------------------------------------------------------------------------
-Properties properties;
-Context      context = 0;
-Scene* scene;
+Properties	properties;
+Context		context = 0;
+Scene*		scene;
 
 
 //------------------------------------------------------------------------------
@@ -111,7 +112,7 @@ static std::string ptxPath( const std::string& cuda_file )
 
 optix::GeometryInstance createSphere(optix::Context context,
 	optix::Material material,
-	float3 center,
+	optix::float3 center,
 	float radius)
 {
 	optix::Geometry sphere = context->createGeometry();
@@ -129,7 +130,7 @@ optix::GeometryInstance createSphere(optix::Context context,
 
 optix::GeometryInstance createQuad(optix::Context context,
 	optix::Material material,
-	float3 v1, float3 v2, float3 anchor, float3 n)
+	optix::float3 v1, optix::float3 v2, optix::float3 anchor, optix::float3 n)
 {
 	optix::Geometry quad = context->createGeometry();
 	quad->setPrimitiveCount(1u);
@@ -176,7 +177,7 @@ void destroyContext()
 }
 
 
-void createContext( bool use_pbo, unsigned int max_depth )
+void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames)
 {
     // Set up context
     context = Context::create();
@@ -203,7 +204,7 @@ void createContext( bool use_pbo, unsigned int max_depth )
 
 	/* Multiple-bounced feature buffer */
 	Buffer mbf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
-		scene->properties.width, scene->properties.height);
+		scene->properties.width, scene->properties.height, num_frames);
 	mbf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
 	context["mbf_buffer"]->set(mbf_buffer); 
 
@@ -1063,7 +1064,7 @@ int main( int argc, char** argv )
 
 		ilInit();
 
-		createContext(use_pbo, scene->properties.max_depth);
+		createContext(use_pbo, scene->properties.max_depth, num_frames);
 
 		// Load textures
 		for (int i = 0; i < scene->texture_map.size(); i++)
@@ -1149,14 +1150,36 @@ int main( int argc, char** argv )
 
 				if (normal)
 				{
+					/* for verification test
 					std::string normal_file(out_file);
 					normal_file.insert(out_file.find('.'), "normal");
 					sutil::writeBufferToFile(normal_file.c_str(), getNormalBuffer());
+					*/
+
+					std::string path_file(out_file);
+					path_file = path_file.substr(0, out_file.find('.')) + "_path.dat";
+					std::fstream file;
+					file.open(path_file, std::ios::out | std::ios::binary);
+					if (!file)
+						std::cerr << "Error in creating a path file" << std::endl;
+					else
+					{
+						RTbuffer buf = getMBFBuffer()->get();
+						float* data;
+						rtBufferMap(buf, (void**)&data);
+						RTsize width, height, depth;
+						getMBFBuffer()->getSize(width, height, depth);
+						file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
+						file.close();
+						rtBufferUnmap(buf);
+
+						std::cerr << "Wrote path file " << path_file << std::endl;
+					}
 				}
 
 				std::cerr << "Wrote " << out_file <<  std::endl;
 				destroyContext();
-			}		
+			}
 		}
 		else
 		{
