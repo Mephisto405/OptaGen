@@ -14,7 +14,7 @@
 struct Properties
 {
 	Properties() : width(1280), height(720), vfov(35.0f), max_depth(3), 
-		init_eye(false), init_lookat(false), init_up(false), bg_file_name("") {}
+		init_eye(false), init_lookat(false), init_up(false), envmap_fn("") {}
 	int width;
 	int height;
 	float vfov;
@@ -25,7 +25,7 @@ struct Properties
 	optix::float3 camera_eye;
 	optix::float3 camera_lookat;
 	optix::float3 camera_up;
-	std::string bg_file_name;
+	std::string envmap_fn;			/* filename of the environmental map */
 };
 
 #endif

@@ -29,6 +29,9 @@
 #include <optix.h>
 #include <optixu/optixu_math_namespace.h>
 #include "prd.h"
+#include "helpers.h"
+#include "light_parameters.h"
+#include <assert.h>
 
 using namespace optix;
 
@@ -38,47 +41,38 @@ rtDeclareVariable(float3, up, , );               // global up vector
 rtDeclareVariable(int, option, , );				 // 1 if the envmap is given, 0 otherwise
 
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
-rtDeclareVariable(PerRayData_radiance, prd_radiance, rtPayload, );
-rtTextureSampler<float4, 2> envmap;
+rtDeclareVariable(PerRayData_radiance, prd, rtPayload, );
 
-// -----------------------------------------------------------------------------
+rtBuffer<LightParameter> sysLightParameters;
 
-/*RT_PROGRAM void miss()
-{
-  const float t = max(dot(ray.direction, up), 0.0f);
-  const float3 result = lerp(background_light, background_dark, t);
-
-  prd_radiance.radiance = result;
-  prd_radiance.done = true;
-}
-
-inline __device__ float3 missColor(const optix::Ray &ray)
-{
-	const float3 unit_direction = normalize(ray.direction);
-	const float t = 0.5f * (unit_direction.y + 1.0f);
-	const float3 c = (1.0f - t) * make_float3(1.0f, 1.0f, 1.0f) + t * make_float3(0.5f, 0.7f, 1.0f);
-	return c;
-}*/
 
 RT_PROGRAM void miss()
 {
-	//const float t = max(dot(ray.direction, up), 0.0f);
-	//const float3 result = lerp(background_light, background_dark, t);
-
-	//prd_radiance.radiance = 0.01 * result;
-	//prd_radiance.done = true;
-
 	if (option == 0)
 	{
-		prd_radiance.done = true;
+		prd.done = true;
 	}
 	else
-	{
-		float theta = atan2f(ray.direction.x, ray.direction.z);
-		float phi = M_PIf * 0.5f - acosf(ray.direction.y);
-		float u = (theta + M_PIf) * (0.5f * M_1_PIf);
-		float v = 0.5f * (1.0f + sin(phi));
-		prd_radiance.radiance = prd_radiance.throughput * make_float3(tex2D(envmap, u, v)); // env map support
-		prd_radiance.done = true;
+	{		
+		const LightParameter light = sysLightParameters[0];
+
+		float3 dir = normalize(ray.direction); // might be unnecessary
+		float theta = acosf(-dir.y); // theta == 0.0f is south pole, theta == M_PIf is north pole
+		float phi = (dir.x == 0.0f && dir.z == 0.0f) ? 0.0f : atan2f(dir.x, -dir.z); // Starting on positive z-axis going around clockwise (to negative x-axis)
+		float u = (M_PI + phi) * (0.5f * M_1_PIf) /* + 0.5f */;
+		float v = theta * M_1_PIf;
+
+		const float3 emission = make_float3(optix::rtTex2D<float4>(light.idEnvironmentTexture, u, v)); // env map support
+
+		float misWeight = 1.0f;
+		if (!prd.specularBounce && prd.depth != 0)
+		{
+			//assert(sysLightParameters[0].lightType != LightType::ENVMAP);
+			const float pdfLight = 0.3333333333f * (emission.x + emission.y + emission.z) / light.environmentIntegral;
+			misWeight = powerHeuristic(prd.pdf, pdfLight);
+		}
+
+		prd.radiance = misWeight * prd.throughput * emission;
+		prd.done = true;
 	}
 }

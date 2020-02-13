@@ -73,7 +73,7 @@ const char* const SAMPLE_NAME = "optixPathTracer";
 std::string SAVE_DIR = "";
 
 const int NUMBER_OF_BRDF_INDICES = 4;
-const int NUMBER_OF_LIGHT_INDICES = 2;
+const int NUMBER_OF_LIGHT_INDICES = 3;
 optix::Buffer m_bufferBRDFSample;
 optix::Buffer m_bufferBRDFEval;
 optix::Buffer m_bufferBRDFPdf;
@@ -81,6 +81,7 @@ optix::Buffer m_bufferBRDFPdf;
 optix::Buffer m_bufferLightSample;
 optix::Buffer m_bufferMaterialParameters;
 optix::Buffer m_bufferLightParameters;
+Texture m_environmentTexture;
 
 double elapsedTime = 0;
 double lastTime = 0;
@@ -110,6 +111,7 @@ static std::string ptxPath( const std::string& cuda_file )
         ".ptx";
 }
 
+
 optix::GeometryInstance createSphere(optix::Context context,
 	optix::Material material,
 	optix::float3 center,
@@ -127,6 +129,7 @@ optix::GeometryInstance createSphere(optix::Context context,
 	optix::GeometryInstance instance = context->createGeometryInstance(sphere, &material, &material + 1);
 	return instance;
 }
+
 
 optix::GeometryInstance createQuad(optix::Context context,
 	optix::Material material,
@@ -157,15 +160,18 @@ static Buffer getOutputBuffer()
     return context[ "output_buffer" ]->getBuffer();
 }
 
+
 static Buffer getNormalBuffer()
 {
 	return context["normal_buffer"]->getBuffer();
 }
 
+
 static Buffer getMBFBuffer()
 {
 	return context["mbf_buffer"]->getBuffer();
 }
+
 
 void destroyContext()
 {
@@ -226,13 +232,10 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
     // Miss program
     ptx_path = ptxPath( "background.cu" );
     context->setMissProgram( 0, context->createProgramFromPTXFile( ptx_path, "miss" ) );
-	const std::string texture_filename = scene->dir + scene->properties.bg_file_name;
+	const std::string texture_filename = scene->properties.envmap_fn; // scene->dir + 
 	std::cerr << texture_filename << std::endl;
-	context["background_light"]->setFloat(1.0f, 1.0f, 1.0f);
-	context["background_dark"]->setFloat(0.3945f, 0.0f, 0.4945f);
-	context["up"]->setFloat(0.0f, 1.0f, 0.0f); 
-	context["option"]->setInt((int)(scene->properties.bg_file_name != ""));
-	context["envmap"]->setTextureSampler(sutil::loadTexture(context, texture_filename, optix::make_float3(1.0f)));
+	context["option"]->setInt((int)(scene->properties.envmap_fn != ""));
+	//context["envmap"]->setTextureSampler(sutil::loadTexture(context, texture_filename, optix::make_float3(1.0f)));
 
 	Program prg;
 	// BRDF sampling functions.
@@ -280,6 +283,8 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	// Light sampling functions.
 	m_bufferLightSample = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_LIGHT_INDICES);
 	int* lightsample = (int*)m_bufferLightSample->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+	prg = context->createProgramFromPTXFile(ptxPath("light_sample.cu"), "envmap_sample");
+	lightsample[LightType::ENVMAP] = prg->getId();
 	prg = context->createProgramFromPTXFile(ptxPath("light_sample.cu"), "sphere_sample");
 	lightsample[LightType::SPHERE] = prg->getId();
 	prg = context->createProgramFromPTXFile(ptxPath("light_sample.cu"), "quad_sample");
@@ -290,6 +295,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	// PostprocessingStage tonemapper = context->createBuiltinPostProcessingStage("TonemapperSimple");
 	// http://on-demand.gputechconf.com/gtc/2018/presentation/s8518-an-introduction-to-optix.pdf
 }
+
 
 Material createMaterial(const MaterialParameter &mat, int index)
 {
@@ -306,6 +312,7 @@ Material createMaterial(const MaterialParameter &mat, int index)
 	return material;
 }
 
+
 Material createLightMaterial(const LightParameter &mat, int index)
 {
 	const std::string ptx_path = ptxPath("light_hit_program.cu");
@@ -318,6 +325,7 @@ Material createLightMaterial(const LightParameter &mat, int index)
 
 	return material;
 }
+
 
 void updateMaterialParameters(const std::vector<MaterialParameter> &materials)
 {
@@ -348,12 +356,48 @@ void updateMaterialParameters(const std::vector<MaterialParameter> &materials)
 	m_bufferMaterialParameters->unmap();
 }
 
-void updateLightParameters(const std::vector<LightParameter> &lightParameters)
+
+void updateLightParameters(std::vector<LightParameter> &lightParameters)
 {
+	// The environment light is expected in sysLightDefinitions[0]!
+	if (scene->properties.envmap_fn != "") // HDR Environment mapping with loaded texture.
+	{		
+		Picture* picture = new Picture;
+		picture->load(scene->properties.envmap_fn);
+
+		m_environmentTexture.createEnvironment(picture);
+
+		delete picture;
+
+		// Generate the CDFs for direct environment lighting and the environment texture sampler itself.
+		m_environmentTexture.calculateCDF(context);
+
+		LightParameter light;
+		light.lightType = LightType::ENVMAP;
+		light.area = 4.0f * M_PIf; // Unused.
+
+		// Set the bindless texture and buffer IDs inside the LightDefinition.
+		light.idEnvironmentTexture = m_environmentTexture.getId();
+		light.idEnvironmentCDF_U = m_environmentTexture.getBufferCDF_U()->getId();
+		light.idEnvironmentCDF_V = m_environmentTexture.getBufferCDF_V()->getId();
+		light.environmentIntegral = m_environmentTexture.getIntegral(); // DAR PERF Could bake the factor 2.0f * M_PIf * M_PIf into the sysEnvironmentIntegral here.
+
+		// Debug
+		RTsize u1, u2, v;
+		m_environmentTexture.getBufferCDF_U()->getSize(u1, u2);
+		m_environmentTexture.getBufferCDF_V()->getSize(v);
+		std::cerr << "Envmap size: " << u1 << " "  << v << std::endl;
+
+		lightParameters.insert(lightParameters.begin(), light);
+
+		m_bufferLightParameters = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_USER);
+		m_bufferLightParameters->setElementSize(sizeof(LightParameter));
+		m_bufferLightParameters->setSize(lightParameters.size()); // Update the buffer size
+	}
+
 	LightParameter* dst = static_cast<LightParameter*>(m_bufferLightParameters->map(0, RT_BUFFER_MAP_WRITE_DISCARD));
 	for (size_t i = 0; i < lightParameters.size(); ++i, ++dst) {
 		LightParameter mat = lightParameters[i];
-
 		dst->position = mat.position;
 		dst->emission = mat.emission;
 		dst->radius = mat.radius;
@@ -362,7 +406,13 @@ void updateLightParameters(const std::vector<LightParameter> &lightParameters)
 		dst->v = mat.v;
 		dst->normal = mat.normal;
 		dst->lightType = mat.lightType;
+
+		dst->idEnvironmentTexture = mat.idEnvironmentTexture;
+		dst->idEnvironmentCDF_U = mat.idEnvironmentCDF_U;
+		dst->idEnvironmentCDF_V = mat.idEnvironmentCDF_V;
+		dst->environmentIntegral = mat.environmentIntegral;
 	}
+
 	m_bufferLightParameters->unmap();
 }
 
@@ -381,6 +431,7 @@ inline int argmin(optix::float3 v)
 		return 1;
 	return 2;
 }
+
 
 inline float getFromIdx(optix::float3 v, int argmin)
 {
@@ -560,7 +611,9 @@ void setRandomMaterials()
 
 	for (size_t i = 0; i < scene->materials.size(); ++i)
 	{
+		int albedoID = scene->materials[i].albedoID;
 		scene->materials[i] = MaterialParameter();
+		scene->materials[i].albedoID = albedoID;
 		scene->materials[i].dist = DistType::GGX;
 
 		float what_brdf = randFloat(0.0f, 1.0f);
@@ -603,16 +656,12 @@ void setRandomBackground(const std::string base_hdrs, const std::vector<std::str
 {
 	std::string ptx_path = ptxPath("background.cu");
 	context->setMissProgram(0, context->createProgramFromPTXFile(ptx_path, "miss"));
-	const std::string texture_filename = base_hdrs + entries[rand() % entries.size()];
-	std::cerr << texture_filename << std::endl;
-	context["background_light"]->setFloat(1.0f, 1.0f, 1.0f);
-	context["background_dark"]->setFloat(0.3945f, 0.0f, 0.4945f);
-	context["up"]->setFloat(0.0f, 1.0f, 0.0f);
+	scene->properties.envmap_fn = base_hdrs + entries[rand() % entries.size()];
+	std::cerr << scene->properties.envmap_fn << std::endl;
 	context["option"]->setInt(1); // 1: Miss function on, 0: off (all black)
 
-	// prevent memory leak
-	context["envmap"]->getTextureSampler()->getBuffer()->destroy();
-	context["envmap"]->setTextureSampler(sutil::loadTexture(context, texture_filename, optix::make_float3(1.0f)));
+	updateLightParameters(scene->lights);
+	context["sysLightParameters"]->setBuffer(m_bufferLightParameters);
 }
 
 
@@ -702,14 +751,17 @@ optix::Aabb createGeometry(
 		for (i = 0; i < scene->lights.size(); ++i)
 		{
 			GeometryInstance instance;
-			if (scene->lights[i].lightType == QUAD)
+			if (scene->lights[i].lightType == QUAD) 
+			{
 				instance = createQuad(context, createLightMaterial(scene->lights[i], i), scene->lights[i].u, scene->lights[i].v, scene->lights[i].position, scene->lights[i].normal);
+				geometry_group->addChild(instance);
+			}
 			else if (scene->lights[i].lightType == SPHERE)
+			{
 				instance = createSphere(context, createLightMaterial(scene->lights[i], i), scene->lights[i].position, scene->lights[i].radius);
-			geometry_group->addChild(instance);
+				geometry_group->addChild(instance);
+			}
 		}
-		//GeometryInstance instance = createSphere(context, createMaterial(materials[j], j), optix::make_float3(150, 80, 120), 80);
-		//geometry_group->addChild(instance);
 	}
 
 	
@@ -1043,7 +1095,7 @@ int main( int argc, char** argv )
 		{
 			std::cout << "Build succeed." << std::endl;
 			// Default scene
-			scene_file = sutil::samplesDir() + std::string("/data/bedroom.scene");
+			scene_file = std::string("C:/Users/Dorian/data_scenes/optagen/car/scene.scene");
 			scene = LoadScene(scene_file.c_str());
 		}
 		else
@@ -1064,7 +1116,10 @@ int main( int argc, char** argv )
 
 		ilInit();
 
-		createContext(use_pbo, scene->properties.max_depth, num_frames);
+		if (random)
+			createContext(use_pbo, scene->properties.max_depth, 4);
+		else
+			createContext(use_pbo, scene->properties.max_depth, num_frames);
 
 		// Load textures
 		for (int i = 0; i < scene->texture_map.size(); i++)

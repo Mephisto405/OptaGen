@@ -172,9 +172,9 @@ RT_PROGRAM void pinhole_camera()
 	accum_buffer[launch_index] = acc_val;
 
 	/* Path feature buffer */
-	if (frame == 3)
-		normal_buffer[launch_index] = pf6.nor[5]; //LinearToSrgb(ToneMap(pf6.rad[2], 1.5));
-	mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
+	//if (frame == 3)
+	//	normal_buffer[launch_index] = pf6.nor[5]; //LinearToSrgb(ToneMap(pf6.rad[2], 1.5));
+	//mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
 }
 
 RT_PROGRAM void exception()

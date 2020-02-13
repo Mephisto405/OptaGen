@@ -56,13 +56,14 @@ rtDeclareVariable(int, max_depth, , );
 rtBuffer< rtCallableProgramId<void(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFPdf;
 rtBuffer< rtCallableProgramId<void(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFSample;
 rtBuffer< rtCallableProgramId<float3(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFEval;
-rtBuffer< rtCallableProgramId<void(LightParameter &light, PerRayData_radiance &prd, LightSample &sample)> > sysLightSample;
+rtBuffer< rtCallableProgramId<void(const LightParameter &light, const float3 &surfacePos, unsigned int &seed, LightSample &lightSample)> > sysLightSample;
 
 rtBuffer<MaterialParameter> sysMaterialParameters;
 rtDeclareVariable(int, materialId, , ); 
 rtDeclareVariable(int, sysNumberOfLights, , );
 
 rtBuffer<LightParameter> sysLightParameters;
+
 
 RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 {
@@ -74,8 +75,31 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 	LightSample lightSample;
 
 	float3 surfacePos = state.fhp;
-	float3 surfaceNormal = state.ffnormal;
 
+	sysLightSample[light.lightType](light, surfacePos, prd.seed, lightSample);
+
+	if (0.0f < lightSample.pdf)
+	{
+		prd.bsdfDir = lightSample.direction;
+		sysBRDFPdf[mat.brdf](mat, state, prd);
+		float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
+
+		if (0.0f < prd.pdf && (f.x != 0.0f || f.y != 0.0f || f.z != 0.0f))
+		{
+			PerRayData_shadow prdShadow;
+			prdShadow.inShadow = false;
+			Ray shadowRay = make_Ray(surfacePos, lightSample.direction, 1, scene_epsilon, lightSample.distance - scene_epsilon);
+			rtTrace(top_object, shadowRay, prdShadow);
+
+			if (!prdShadow.inShadow)
+			{
+				const float misWeight = powerHeuristic(lightSample.pdf, prd.pdf);
+				L = misWeight * prd.throughput * f * lightSample.emission / max(1e-3f, lightSample.pdf);
+			}
+		}
+	}
+
+	/*
 	sysLightSample[light.lightType](light, prd, lightSample);
 
 	float3 lightDir = lightSample.surfacePos - surfacePos;
@@ -103,9 +127,11 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 
 		L = powerHeuristic(lightPdf, prd.pdf) * prd.throughput * f * lightSample.emission / max(0.001f, lightPdf);
 	}
+	*/
 
 	return L;
 }
+
 
 RT_PROGRAM void closest_hit()
 {
@@ -149,6 +175,7 @@ RT_PROGRAM void closest_hit()
 	else
 		prd.done = true;
 }
+
 
 RT_PROGRAM void any_hit()
 {
