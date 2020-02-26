@@ -5,49 +5,41 @@
 ## Disclaimer: This work is in progress. Therefore, the code just works fine but not well-structured (so the readme file is). After implementing all the necessary functions, I plan to refine the code structure. Thanks.
 
 ## Features (star signs indicate knightcrawler25's original implementation)
-- Rendering
+1. Rendering
 
--- Microfacet models (GGX/Phong/Beckmann) for reflection and refraction
+- [x] Microfacet models (GGX/Phong/Beckmann) for reflection and refraction
 
--- *Disney BRDF
+- [x] Multiple importance sampling for HDR environmental map
 
--- *Simple glass
+- [x] *Disney BRDF
 
-- Automated data generation
+- [x] *Simple glass
 
--- Randomization of materials, camera parameters, HDR environmental maps, and lighting
+- [ ] Reconstruction filtering (tent filter): writeBufferToFile 에서 구현 ([1/2 1 1/2][1/2 1 1/2]'를 normalize해서 쓰면 됨)
 
-- Last-and-least
+- [ ] opacity (mask): 반투명 물체 구현이 시급
 
--- xml2scene parser for Mitsuba-oriented scenes
+- [ ] conductor => eta, k 값 적용 가능하도록 (그래야 알루미늄, 철 등을 구분 가능) (혹시 eta, k 필요 없이도 sheen, clearcoat 로 구현 가능?) (color를 강제로 넣는 것도 괜찮을 듯)
 
--- drag-drop input file
+- [ ] thindielectric => car, car2 scene에서 crucial
 
--- (not physically-based) tinted glass
+- [ ] coating: (for car, car2 scenes) IOR, thickness
 
--- HDR environmental map support
+2. Automated data generation
 
--- camera config. preset
+- [x] Multichannel rendering
 
-## TO-DO
-- Algorithm support
+- [x] Randomization of materials, camera parameters, HDR environmental maps, and lighting
 
--- Multichannel rendering: optixPathTracer.cpp에 183번째 줄에 output_buffer라는 개념 등장
+3. Last-and-least
 
--- reconstruction filtering (tent filter): writeBufferToFile 에서 구현 ([1/2 1 1/2][1/2 1 1/2]'를 normalize해서 쓰면 됨)
+- [x] xml2scene parser for Mitsuba-oriented scenes
 
-- Material support (렌더링 퀄리티에 영향 크게 주는 중요도 순서)
+- [x] drag-drop input file
 
--- Multiple importance sampling (MIS) for HDR environmental maps
+- [x] (not physically-based) tinted glass
 
--- opacity (mask): 반투명 물체 구현이 시급
-
--- conductor => eta, k 값 적용 가능하도록 (그래야 알루미늄, 철 등을 구분 가능) (혹시 eta, k 필요 없이도 sheen, clearcoat 로 구현 가능?) (color를 강제로 넣는 것도 괜찮을 듯)
-
--- thindielectric => car, car2 scene에서 crucial
-
--- coating: (for car, car2 scenes) IOR, thickness
+- [x] camera config. preset
 
 ## Requirements
-
 parse >= 1.12.1
