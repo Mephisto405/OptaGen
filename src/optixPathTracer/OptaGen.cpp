@@ -208,11 +208,11 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 		scene->properties.width, scene->properties.height);
 	context["normal_buffer"]->set(normal_buffer);
 
-	/* Multiple-bounced feature buffer */
+	/* Multiple-bounced feature buffer 
 	Buffer mbf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
 		scene->properties.width, scene->properties.height, num_frames);
 	mbf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
-	context["mbf_buffer"]->set(mbf_buffer); 
+	context["mbf_buffer"]->set(mbf_buffer); */
 
     // Accumulation buffer
     Buffer accum_buffer = context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
@@ -659,6 +659,12 @@ void setRandomBackground(const std::string base_hdrs, const std::vector<std::str
 	scene->properties.envmap_fn = base_hdrs + entries[rand() % entries.size()];
 	std::cerr << scene->properties.envmap_fn << std::endl;
 	context["option"]->setInt(1); // 1: Miss function on, 0: off (all black)
+
+	// Prevent memory leak
+	m_environmentTexture.getSampler()->getBuffer()->destroy();
+	m_environmentTexture.getBufferCDF_U()->destroy();
+	m_environmentTexture.getBufferCDF_V()->destroy();
+	context["sysLightParameters"]->getBuffer()->destroy();
 
 	updateLightParameters(scene->lights);
 	context["sysLightParameters"]->setBuffer(m_bufferLightParameters);
@@ -1206,11 +1212,12 @@ int main( int argc, char** argv )
 				if (normal)
 				{
 					/* for verification test
+					*/
 					std::string normal_file(out_file);
 					normal_file.insert(out_file.find('.'), "normal");
 					sutil::writeBufferToFile(normal_file.c_str(), getNormalBuffer());
-					*/
 
+					/*
 					std::string path_file(out_file);
 					path_file = path_file.substr(0, out_file.find('.')) + "_path.dat";
 					std::fstream file;
@@ -1230,6 +1237,7 @@ int main( int argc, char** argv )
 
 						std::cerr << "Wrote path file " << path_file << std::endl;
 					}
+					*/
 				}
 
 				std::cerr << "Wrote " << out_file <<  std::endl;

@@ -161,8 +161,9 @@ RT_CALLABLE_PROGRAM void sphere_sample(const LightParameter &light, const float3
 	if (1.0e-6f < lightSample.distance)
 	{
 		lightSample.direction /= lightSample.distance;
+		optix::float3 lightNormal = normalize(lightSamplePos - light.position);
 
-		const float cosTheta = dot(-lightSample.direction, light.normal); // light이 surface를 바라보는 방향이어야 한다.
+		const float cosTheta = dot(-lightSample.direction, lightNormal); // light이 surface를 바라보는 방향이어야 한다.
 		if (1.0e-6f < cosTheta)
 		{
 			lightSample.emission = light.emission * float(sysNumberOfLights);

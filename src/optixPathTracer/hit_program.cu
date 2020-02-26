@@ -156,7 +156,7 @@ RT_PROGRAM void closest_hit()
 
 	prd.radiance += mat.emission * prd.throughput;
 	prd.albedo = mat.color;
-	prd.normal = world_shading_normal;
+	prd.normal = ffnormal;
 
 	//TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;

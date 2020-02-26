@@ -46,6 +46,21 @@ rtDeclareVariable(PerRayData_radiance, prd, rtPayload, );
 rtBuffer<LightParameter> sysLightParameters;
 
 
+__device__ inline float3 ToneMap(const float3& c, float limit)
+{
+	float luminance = 0.3f*c.x + 0.6f*c.y + 0.1f*c.z;
+
+	float3 col = c * 1.0f / (1.0f + luminance / limit);
+	return make_float3(col.x, col.y, col.z);
+}
+
+__device__ inline float3 LinearToSrgb(const float3& c)
+{
+	const float kInvGamma = 1.0f / 2.2f;
+	return make_float3(powf(c.x, kInvGamma), powf(c.y, kInvGamma), powf(c.z, kInvGamma));
+}
+
+
 RT_PROGRAM void miss()
 {
 	if (option == 0)
@@ -73,6 +88,7 @@ RT_PROGRAM void miss()
 		}
 
 		prd.radiance = misWeight * prd.throughput * emission;
+		prd.albedo = LinearToSrgb(ToneMap(prd.radiance, 1.5));
 		prd.done = true;
 	}
 }

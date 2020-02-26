@@ -53,6 +53,22 @@ rtDeclareVariable(float, scene_epsilon, , );
 rtBuffer<LightParameter> sysLightParameters;
 rtDeclareVariable(int, lightMaterialId, , );
 
+
+__device__ inline float3 ToneMap(const float3& c, float limit)
+{
+	float luminance = 0.3f*c.x + 0.6f*c.y + 0.1f*c.z;
+
+	float3 col = c * 1.0f / (1.0f + luminance / limit);
+	return make_float3(col.x, col.y, col.z);
+}
+
+__device__ inline float3 LinearToSrgb(const float3& c)
+{
+	const float kInvGamma = 1.0f / 2.2f;
+	return make_float3(powf(c.x, kInvGamma), powf(c.y, kInvGamma), powf(c.z, kInvGamma));
+}
+
+
 RT_PROGRAM void closest_hit()
 {
 	const float3 world_shading_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, shading_normal));
@@ -60,16 +76,30 @@ RT_PROGRAM void closest_hit()
 	const float3 ffnormal = faceforward( world_shading_normal, -ray.direction, world_geometric_normal );
 
 	LightParameter light = sysLightParameters[lightMaterialId];
-	float cosTheta = dot(-ray.direction, light.normal);
-
-	if ((light.lightType == QUAD && cosTheta > 0.0f) || light.lightType == SPHERE)
+	float cosTheta;
+	if (light.lightType == QUAD)
+		cosTheta = dot(-ray.direction, light.normal);
+	else if (light.lightType == SPHERE)
 	{
-		if(prd.depth == 0 || prd.specularBounce)
+		const float3 lightNormal = normalize(front_hit_point - light.position);
+		const float cosTheta = dot(-ray.direction, lightNormal);
+	}
+
+
+	if ((light.lightType == QUAD || light.lightType == SPHERE) && cosTheta > 0.0f)
+	{
+		if (prd.depth == 0 || prd.specularBounce)
+		{
 			prd.radiance += light.emission * prd.throughput;
+			prd.albedo = light.emission * prd.throughput;//LinearToSrgb(ToneMap(light.emission * prd.throughput, 1.5));
+			prd.normal = ffnormal;
+		}
 		else
 		{
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
-			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * prd.throughput * light.emission;
+			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
+			prd.albedo = LinearToSrgb(ToneMap(powerHeuristic(prd.pdf, lightPdf) * prd.throughput * light.emission, 1.5));
+			prd.normal = ffnormal;
 		}
 	}
 

@@ -47,7 +47,7 @@ rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
 rtBuffer<uchar4, 2>              output_buffer;
 rtBuffer<float3, 2>              normal_buffer;
-rtBuffer<pathFeatures6, 3>       mbf_buffer; /* Multiple-bounced feature buffer */
+//rtBuffer<pathFeatures6, 3>       mbf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
 rtDeclareVariable(unsigned int,  frame, , );
@@ -127,8 +127,9 @@ RT_PROGRAM void pinhole_camera()
 	// will generally perform better than tracing radiance rays recursively
 	// in closest hit programs.
 	for (;;) {
-		prd.normal = make_float3(0.0f);
+		prd.radiance = make_float3(0.0f);
 		prd.albedo = make_float3(0.0f);
+		prd.normal = make_float3(0.0f);
 
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
 		prd.wo = -ray.direction;
@@ -140,11 +141,13 @@ RT_PROGRAM void pinhole_camera()
 		//								  0.5f * normalize(prd.normal) + make_float3(0.5f); // normalize(prd.normal)
 		
 		/* Path features */
-		pf6.rad[prd.depth] = LinearToSrgb(ToneMap(prd.radiance, 1.5));
-		pf6.alb[prd.depth] = prd.albedo;
-		pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
-			prd.normal :
-			0.5f * normalize(prd.normal) + make_float3(0.5f);
+		if (prd.depth < 6) {
+			pf6.rad[prd.depth] = LinearToSrgb(ToneMap(prd.radiance, 1.5));
+			pf6.alb[prd.depth] = prd.albedo;
+			pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
+				prd.normal :
+				0.5f * normalize(prd.normal) + make_float3(0.5f);
+		}
 
 		if (prd.done || prd.depth >= max_depth)
 			break;
@@ -159,22 +162,21 @@ RT_PROGRAM void pinhole_camera()
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
+	float3 acc_nor = normal_buffer[launch_index];
 	if( frame > 0 ) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
+		acc_nor = lerp(acc_nor, pf6.alb[0], 1.0f / static_cast<float>(frame + 1));
 	} else {
 		acc_val = make_float4(result, 0.f);
+		acc_nor = pf6.alb[0];
+		//mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
 	}
 
 	float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));
-	//float4 val = LinearToSrgb(acc_val);
 
 	output_buffer[launch_index] = make_color(make_float3(val));
 	accum_buffer[launch_index] = acc_val;
-
-	/* Path feature buffer */
-	//if (frame == 3)
-	//	normal_buffer[launch_index] = pf6.nor[5]; //LinearToSrgb(ToneMap(pf6.rad[2], 1.5));
-	//mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
+	normal_buffer[launch_index] = acc_nor;
 }
 
 RT_PROGRAM void exception()
