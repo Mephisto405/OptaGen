@@ -157,8 +157,6 @@ Scene* LoadScene(const char* filename)
 				sscanf(line, " normal %f %f %f", &light.normal.x, &light.normal.y, &light.normal.z);
 
 				sscanf(line, " radius %f", &light.radius);
-				//sscanf(line, " u %f %f %f", &light.v1.x, &light.v1.y, &light.v1.z);
-				//sscanf(line, " v %f %f %f", &light.v2.x, &light.v2.y, &light.v2.z);
 				sscanf(line, " v1 %f %f %f", &v1.x, &v1.y, &v1.z);
 				sscanf(line, " v2 %f %f %f", &v2.x, &v2.y, &v2.z);
 				sscanf(line, " type %s", light_type);
@@ -196,7 +194,7 @@ Scene* LoadScene(const char* filename)
 				if (strchr(line, '}'))
 					break;
 
-				char path[2048];
+				char envmap_fn[2048];
 
 				if ( sscanf(line, " width %i", &prop.width) != 0 )
 					prop.width = (prop.width < MINW) ? MINW : ((prop.width > MAXW ? MAXW : prop.width));
@@ -213,8 +211,8 @@ Scene* LoadScene(const char* filename)
 					prop.init_lookat = true;
 				if ( sscanf(line, " up %f %f %f", &prop.camera_up.x, &prop.camera_up.y, &prop.camera_up.z) != 0 )
 					prop.init_up = true;
-				if (sscanf(line, " background %s", path) == 1) {
-					prop.bg_file_name = std::string(path);
+				if (sscanf(line, " envmap %s", envmap_fn) == 1) {
+					prop.envmap_fn = std::string(envmap_fn);
 				}
 				
 			}
