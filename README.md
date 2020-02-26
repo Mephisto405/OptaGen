@@ -1,6 +1,6 @@
 # OptaGen: OptiX-based Autonomous Data Generation Tool (work in progress)
 
-## This work has started on top of a great [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
+This work has started on top of a great [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
 
 ## Disclaimer
 This work is in progress. Therefore, the code just works fine but not well-structured (so the readme file is). After implementing all the necessary functions, I plan to refine the code structure. Thanks.
