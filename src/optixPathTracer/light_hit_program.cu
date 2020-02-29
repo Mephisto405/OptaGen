@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@
 
 using namespace optix;
 
-rtDeclareVariable( float3, shading_normal, attribute shading_normal, ); 
-rtDeclareVariable( float3, geometric_normal, attribute geometric_normal, );
-rtDeclareVariable( float3, front_hit_point, attribute front_hit_point, );
+rtDeclareVariable(float3, shading_normal, attribute shading_normal, );
+rtDeclareVariable(float3, geometric_normal, attribute geometric_normal, );
+rtDeclareVariable(float3, front_hit_point, attribute front_hit_point, );
 rtDeclareVariable(float3, back_hit_point, attribute back_hit_point, );
 
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
@@ -72,8 +72,8 @@ __device__ inline float3 LinearToSrgb(const float3& c)
 RT_PROGRAM void closest_hit()
 {
 	const float3 world_shading_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, shading_normal));
-	const float3 world_geometric_normal = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
-	const float3 ffnormal = faceforward( world_shading_normal, -ray.direction, world_geometric_normal );
+	const float3 world_geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, geometric_normal));
+	const float3 ffnormal = faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
 
 	LightParameter light = sysLightParameters[lightMaterialId];
 	float cosTheta;

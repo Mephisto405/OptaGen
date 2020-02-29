@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -87,7 +87,7 @@ RT_CALLABLE_PROGRAM void envmap_sample(const LightParameter &light, const float3
 			ilo = i;
 		}
 	}
-	
+
 	uint2 index;
 	index.y = ilo;
 
@@ -107,14 +107,14 @@ RT_CALLABLE_PROGRAM void envmap_sample(const LightParameter &light, const float3
 			ilo = index.x;
 		}
 	}
-	
+
 	index.x = ilo;
-	
+
 	// Continuous sampling of the CDF.
 	// Continuous sampling of the CDF.
 	const float cdfLowerU = light.idEnvironmentCDF_U[index];
 	const float cdfUpperU = light.idEnvironmentCDF_U[make_uint2(index.x + 1, index.y)];
-	const float du = (r1- cdfLowerU) / (cdfUpperU - cdfLowerU);
+	const float du = (r1 - cdfLowerU) / (cdfUpperU - cdfLowerU);
 
 	const float cdfLowerV = light.idEnvironmentCDF_V[index.y];
 	const float cdfUpperV = light.idEnvironmentCDF_V[index.y + 1];
@@ -126,7 +126,7 @@ RT_CALLABLE_PROGRAM void envmap_sample(const LightParameter &light, const float3
 
 	// Light sample direction vector polar coordinates. This is where the environment rotation happens!
 	// DAR FIXME Use a light.matrix to rotate the resulting vector instead.
-	const float phi = (u /* - 0.5f */) * 2.0f * M_PIf;
+	const float phi = (u /* - 0.5f */)* 2.0f * M_PIf;
 	const float theta = v * M_PIf; // theta == 0.0f is south pole, theta == M_PIf is north pole.
 
 	const float sinTheta = sinf(theta);
@@ -151,7 +151,7 @@ RT_CALLABLE_PROGRAM void sphere_sample(const LightParameter &light, const float3
 {
 	const float r1 = rnd(seed);
 	const float r2 = rnd(seed);
-	
+
 	lightSample.pdf = 0.0f;
 
 	optix::float3 lightSamplePos = light.position + UniformSampleSphere(r1, r2) * light.radius;
