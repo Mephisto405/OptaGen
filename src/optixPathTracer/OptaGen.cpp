@@ -1,4 +1,4 @@
-/* 
+ï»¿/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,7 +12,7 @@
  *  * Neither the name of NVIDIA CORPORATION nor the names of its
  *    contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -102,13 +102,13 @@ Scene*		scene;
 //
 //------------------------------------------------------------------------------
 
-static std::string ptxPath( const std::string& cuda_file )
+static std::string ptxPath(const std::string& cuda_file)
 {
-    return
-        std::string(sutil::samplesPTXDir()) +
-        "/" + std::string(SAMPLE_NAME) + "_generated_" +
-        cuda_file +
-        ".ptx";
+	return
+		std::string(sutil::samplesPTXDir()) +
+		"/" + std::string(SAMPLE_NAME) + "_generated_" +
+		cuda_file +
+		".ptx";
 }
 
 
@@ -157,7 +157,7 @@ optix::GeometryInstance createQuad(optix::Context context,
 
 static Buffer getOutputBuffer()
 {
-    return context[ "output_buffer" ]->getBuffer();
+	return context["output_buffer"]->getBuffer();
 }
 
 
@@ -175,63 +175,63 @@ static Buffer getMBFBuffer()
 
 void destroyContext()
 {
-    if( context )
-    {
-        context->destroy();
-        context = 0;
-    }
+	if (context)
+	{
+		context->destroy();
+		context = 0;
+	}
 }
 
 
 void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames)
 {
-    // Set up context
-    context = Context::create();
-    context->setRayTypeCount( 2 );
-    context->setEntryPointCount( 1 );
+	// Set up context
+	context = Context::create();
+	context->setRayTypeCount(2);
+	context->setEntryPointCount(1);
 
-    // Note: this sample does not need a big stack size even with high ray depths, 
-    // because rays are not shot recursively.
-    context->setStackSize( 800 );
+	// Note: this sample does not need a big stack size even with high ray depths, 
+	// because rays are not shot recursively.
+	context->setStackSize(800);
 
-    // Note: high max depth for reflection and refraction through glass
-	context["max_depth"]->setInt( max_depth );
-    context["cutoff_color"]->setFloat( 0.0f, 0.0f, 0.0f );
-    context["frame"]->setUint( 0u );
-    context["scene_epsilon"]->setFloat( 1.e-3f );
+	// Note: high max depth for reflection and refraction through glass
+	context["max_depth"]->setInt(max_depth);
+	context["cutoff_color"]->setFloat(0.0f, 0.0f, 0.0f);
+	context["frame"]->setUint(0u);
+	context["scene_epsilon"]->setFloat(1.e-3f);
 
-    Buffer buffer = sutil::createOutputBuffer( context, RT_FORMAT_UNSIGNED_BYTE4, 
-		scene->properties.width, scene->properties.height, use_pbo );
-    context["output_buffer"]->set( buffer );
+	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_UNSIGNED_BYTE4,
+		scene->properties.width, scene->properties.height, use_pbo);
+	context["output_buffer"]->set(buffer);
 
 	Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3,
 		scene->properties.width, scene->properties.height);
 	context["normal_buffer"]->set(normal_buffer);
 
-	/* Multiple-bounced feature buffer 
+	/* Multiple-bounced feature buffer
 	Buffer mbf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
-		scene->properties.width, scene->properties.height, num_frames);
+	scene->properties.width, scene->properties.height, num_frames);
 	mbf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
 	context["mbf_buffer"]->set(mbf_buffer); */
 
-    // Accumulation buffer
-    Buffer accum_buffer = context->createBuffer( RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
-            RT_FORMAT_FLOAT4, scene->properties.width, scene->properties.height);
-    context["accum_buffer"]->set( accum_buffer );
+	// Accumulation buffer
+	Buffer accum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
+		RT_FORMAT_FLOAT4, scene->properties.width, scene->properties.height);
+	context["accum_buffer"]->set(accum_buffer);
 
-    // Ray generation program
-    std::string ptx_path( ptxPath( "path_trace_camera.cu" ) );
-    Program ray_gen_program = context->createProgramFromPTXFile( ptx_path, "pinhole_camera" );
-    context->setRayGenerationProgram( 0, ray_gen_program );
+	// Ray generation program
+	std::string ptx_path(ptxPath("path_trace_camera.cu"));
+	Program ray_gen_program = context->createProgramFromPTXFile(ptx_path, "pinhole_camera");
+	context->setRayGenerationProgram(0, ray_gen_program);
 
-    // Exception program
-    Program exception_program = context->createProgramFromPTXFile( ptx_path, "exception" );
-    context->setExceptionProgram( 0, exception_program );
-    context["bad_color"]->setFloat( 1.0f, 0.0f, 1.0f );
+	// Exception program
+	Program exception_program = context->createProgramFromPTXFile(ptx_path, "exception");
+	context->setExceptionProgram(0, exception_program);
+	context["bad_color"]->setFloat(1.0f, 0.0f, 1.0f);
 
-    // Miss program
-    ptx_path = ptxPath( "background.cu" );
-    context->setMissProgram( 0, context->createProgramFromPTXFile( ptx_path, "miss" ) );
+	// Miss program
+	ptx_path = ptxPath("background.cu");
+	context->setMissProgram(0, context->createProgramFromPTXFile(ptx_path, "miss"));
 	const std::string texture_filename = scene->properties.envmap_fn; // scene->dir + 
 	std::cerr << texture_filename << std::endl;
 	context["option"]->setInt((int)(scene->properties.envmap_fn != ""));
@@ -240,7 +240,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	Program prg;
 	// BRDF sampling functions.
 	m_bufferBRDFSample = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
-	int* brdfSample = (int*) m_bufferBRDFSample->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+	int* brdfSample = (int*)m_bufferBRDFSample->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Sample");
 	brdfSample[BrdfType::DISNEY] = prg->getId();
 	prg = context->createProgramFromPTXFile(ptxPath("glass.cu"), "Sample");
@@ -251,10 +251,10 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	brdfSample[BrdfType::ROUGHDIELECTRIC] = prg->getId();
 	m_bufferBRDFSample->unmap();
 	context["sysBRDFSample"]->setBuffer(m_bufferBRDFSample);
-	
+
 	// BRDF Eval functions.
 	m_bufferBRDFEval = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
-	int* brdfEval = (int*) m_bufferBRDFEval->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+	int* brdfEval = (int*)m_bufferBRDFEval->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Eval");
 	brdfEval[BrdfType::DISNEY] = prg->getId();
 	prg = context->createProgramFromPTXFile(ptxPath("glass.cu"), "Eval");
@@ -265,10 +265,10 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	brdfEval[BrdfType::ROUGHDIELECTRIC] = prg->getId();
 	m_bufferBRDFEval->unmap();
 	context["sysBRDFEval"]->setBuffer(m_bufferBRDFEval);
-	
+
 	// BRDF Pdf functions.
 	m_bufferBRDFPdf = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
-	int* brdfPdf = (int*) m_bufferBRDFPdf->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+	int* brdfPdf = (int*)m_bufferBRDFPdf->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Pdf");
 	brdfPdf[BrdfType::DISNEY] = prg->getId();
 	prg = context->createProgramFromPTXFile(ptxPath("glass.cu"), "Pdf");
@@ -299,14 +299,14 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 
 Material createMaterial(const MaterialParameter &mat, int index)
 {
-	const std::string ptx_path = ptxPath( "hit_program.cu" );
-	Program ch_program = context->createProgramFromPTXFile( ptx_path, "closest_hit" );
+	const std::string ptx_path = ptxPath("hit_program.cu");
+	Program ch_program = context->createProgramFromPTXFile(ptx_path, "closest_hit");
 	Program ah_program = context->createProgramFromPTXFile(ptx_path, "any_hit");
-	
+
 	Material material = context->createMaterial();
-	material->setClosestHitProgram( 0, ch_program );
+	material->setClosestHitProgram(0, ch_program);
 	material->setAnyHitProgram(1, ah_program);
-	
+
 	material["materialId"]->setInt(index);
 
 	return material;
@@ -332,7 +332,7 @@ void updateMaterialParameters(const std::vector<MaterialParameter> &materials)
 	MaterialParameter* dst = static_cast<MaterialParameter*>(m_bufferMaterialParameters->map(0, RT_BUFFER_MAP_WRITE_DISCARD));
 	for (size_t i = 0; i < materials.size(); ++i, ++dst) {
 		MaterialParameter mat = materials[i];
-		
+
 		dst->color = mat.color;
 		dst->emission = mat.emission;
 		dst->metallic = mat.metallic;
@@ -361,7 +361,7 @@ void updateLightParameters(std::vector<LightParameter> &lightParameters)
 {
 	// The environment light is expected in sysLightDefinitions[0]!
 	if (scene->properties.envmap_fn != "") // HDR Environment mapping with loaded texture.
-	{		
+	{
 		Picture* picture = new Picture;
 		picture->load(scene->properties.envmap_fn);
 
@@ -386,7 +386,7 @@ void updateLightParameters(std::vector<LightParameter> &lightParameters)
 		RTsize u1, u2, v;
 		m_environmentTexture.getBufferCDF_U()->getSize(u1, u2);
 		m_environmentTexture.getBufferCDF_V()->getSize(v);
-		std::cerr << "Envmap size: " << u1 << " "  << v << std::endl;
+		std::cerr << "Envmap size: " << u1 << " " << v << std::endl;
 
 		lightParameters.insert(lightParameters.begin(), light);
 
@@ -458,11 +458,11 @@ float swapScore(optix::float3 v, optix::float3 aabb_min, optix::float3 aabb_max,
 	float d;
 
 	if (getFromIdx(d1, argmin(d1)) < getFromIdx(d2, argmin(d2)))
-	{ 
+	{
 		i = argmin(d1);
 		d = getFromIdx(d1, i);
 	}
-	else 
+	else
 	{
 		i = argmin(d2);
 		d = getFromIdx(d2, i);
@@ -487,7 +487,7 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 
 	if (!aabb_txt)
 	{
-		// aabb.txt ÆÄÀÏÀÌ ¾ø´Ù
+		// aabb.txt ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		std::cerr << "No predefined aabb.txt file" << std::endl;
 		aabb_min = aabb.m_min;
 		aabb_max = aabb.m_max;
@@ -495,7 +495,7 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 	}
 	else
 	{
-		// aabb.txt ÆÄÀÏÀÌ ÀÖ´Ù
+		// aabb.txt ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½
 		std::cerr << "Using predefined aabb.txt file" << std::endl;
 		char line[MAXLINELEN];
 		char type[MAXLINELEN] = "None";
@@ -577,7 +577,7 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 		optix::float3 half_widths = 0.5f * (aabb_max - aabb_min);
 		camera_eye = make_float3(
 			randFloat(center.x - 5 * half_widths.x, center.x + 5 * half_widths.x),
-			randFloat(center.y - half_widths.y, center.y + 5 * half_widths.y), // min.y¿¡´Â floor°¡ ÀÖ´Â °æ¿ì°¡ ¸¹À¸¹Ç·Î °æ°è È®Àå X
+			randFloat(center.y - half_widths.y, center.y + 5 * half_widths.y), // min.yï¿½ï¿½ï¿½ï¿½ floorï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ì°¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ ï¿½ï¿½ï¿½ È®ï¿½ï¿½ X
 			randFloat(center.z - 5 * half_widths.z, center.z + 5 * half_widths.z)
 			);
 	}
@@ -586,7 +586,7 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 		randFloat(-0.5f, 0.5f),
 		randFloat(-0.5f, 0.5f),
 		randFloat(-0.5f, 0.5f));
-	
+
 	sutil::Camera camera(
 		scene->properties.width, scene->properties.height, randFloat(30.0f, 60.0f),
 		&camera_eye.x, &camera_lookat.x, &camera_up.x,
@@ -601,12 +601,12 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 void setRandomMaterials()
 {
 	// Randomize the material parameters
-	// ÀÏ´Ü ÅØ½ºÃÄ Á¦¿ÜÇÏ°í ¹Ù²ÙÀÚ
+	// ï¿½Ï´ï¿½ ï¿½Ø½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½Ù²ï¿½ï¿½ï¿½
 
-	// BrdfTypeÀº DISNEY, GLASS, ROUGHDIELECTRIC ¼Â Áß ¼±ÅÃ
-	// DistTypeÀº GGX·Î °íÁ¤
+	// BrdfTypeï¿½ï¿½ DISNEY, GLASS, ROUGHDIELECTRIC ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	// DistTypeï¿½ï¿½ GGXï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	// GLASS: intIOR [1.31 ~ 2.419], extIOR [1.0], color [0.0 ~ 1.0] x 3
-	// DISNEY: color, metallic, subsurface, specular, roughness [0.0 ~ 0.6], specularTint, sheen, sheenTint, clearcoat, clearcoatGloss ³ª¸ÓÁö ¸ðµÎ [0.0 ~ 1.0]
+	// DISNEY: color, metallic, subsurface, specular, roughness [0.0 ~ 0.6], specularTint, sheen, sheenTint, clearcoat, clearcoatGloss ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ [0.0 ~ 1.0]
 	// ROUGHDIELECTRIC: roughness [0.01 ~ 1.0] (exp), intIOR, extIOR, color
 
 	for (size_t i = 0; i < scene->materials.size(); ++i)
@@ -690,7 +690,7 @@ void updateAabbLights(optix::Aabb aabb)
 				light.radius = 0.1f;
 				light.lightType = SPHERE;
 				light.area = 4.0f * M_PIf * light.radius * light.radius;
-				
+
 				scene->lights.push_back(light);
 			}
 		}
@@ -711,53 +711,53 @@ void updateAabbLights(optix::Aabb aabb)
 
 
 optix::Aabb createGeometry(
-        // output: this is a Group with two GeometryGroup children, for toggling visibility later
-        optix::Group& top_group
-        )
+	// output: this is a Group with two GeometryGroup children, for toggling visibility later
+	optix::Group& top_group
+	)
 {
 
-    const std::string ptx_path = ptxPath( "triangle_mesh.cu" );
+	const std::string ptx_path = ptxPath("triangle_mesh.cu");
 
-    top_group = context->createGroup();
-    top_group->setAcceleration( context->createAcceleration( "Trbvh" ) );
+	top_group = context->createGroup();
+	top_group->setAcceleration(context->createAcceleration("Trbvh"));
 
-    int num_triangles = 0;
-	size_t i,j;
-    optix::Aabb aabb;
-    {
-        GeometryGroup geometry_group = context->createGeometryGroup();
-        geometry_group->setAcceleration( context->createAcceleration( "Trbvh" ) );
-        top_group->addChild( geometry_group );
-		
-        for (i = 0,j=0; i < scene->mesh_names.size(); ++i,++j) {
-            OptiXMesh mesh;
-            mesh.context = context;
-            
-            // override defaults
-            mesh.intersection = context->createProgramFromPTXFile( ptx_path, "mesh_intersect_refine" );
-            mesh.bounds = context->createProgramFromPTXFile( ptx_path, "mesh_bounds" );
-            mesh.material = createMaterial(scene->materials[i], i);
+	int num_triangles = 0;
+	size_t i, j;
+	optix::Aabb aabb;
+	{
+		GeometryGroup geometry_group = context->createGeometryGroup();
+		geometry_group->setAcceleration(context->createAcceleration("Trbvh"));
+		top_group->addChild(geometry_group);
 
-            loadMesh( scene->mesh_names[i], mesh, scene->transforms[i] ); 
-            geometry_group->addChild( mesh.geom_instance );
+		for (i = 0, j = 0; i < scene->mesh_names.size(); ++i, ++j) {
+			OptiXMesh mesh;
+			mesh.context = context;
 
-            aabb.include( mesh.bbox_min, mesh.bbox_max );
+			// override defaults
+			mesh.intersection = context->createProgramFromPTXFile(ptx_path, "mesh_intersect_refine");
+			mesh.bounds = context->createProgramFromPTXFile(ptx_path, "mesh_bounds");
+			mesh.material = createMaterial(scene->materials[i], i);
 
-            std::cerr << scene->mesh_names[i] << ": " << mesh.num_triangles << std::endl;
-            num_triangles += mesh.num_triangles;
-        }
-        std::cerr << "Total triangle count: " << num_triangles << std::endl;
-    }
+			loadMesh(scene->mesh_names[i], mesh, scene->transforms[i]);
+			geometry_group->addChild(mesh.geom_instance);
+
+			aabb.include(mesh.bbox_min, mesh.bbox_max);
+
+			std::cerr << scene->mesh_names[i] << ": " << mesh.num_triangles << std::endl;
+			num_triangles += mesh.num_triangles;
+		}
+		std::cerr << "Total triangle count: " << num_triangles << std::endl;
+	}
 	//Lights
 	{
 		GeometryGroup geometry_group = context->createGeometryGroup();
 		geometry_group->setAcceleration(context->createAcceleration("NoAccel"));
 		top_group->addChild(geometry_group);
-		
+
 		for (i = 0; i < scene->lights.size(); ++i)
 		{
 			GeometryInstance instance;
-			if (scene->lights[i].lightType == QUAD) 
+			if (scene->lights[i].lightType == QUAD)
 			{
 				instance = createQuad(context, createLightMaterial(scene->lights[i], i), scene->lights[i].u, scene->lights[i].v, scene->lights[i].position, scene->lights[i].normal);
 				geometry_group->addChild(instance);
@@ -770,11 +770,11 @@ optix::Aabb createGeometry(
 		}
 	}
 
-	
 
-    context[ "top_object" ]->set( top_group ); 
 
-    return aabb;
+	context["top_object"]->set(top_group);
+
+	return aabb;
 }
 
 //------------------------------------------------------------------------------
@@ -785,82 +785,82 @@ optix::Aabb createGeometry(
 
 struct CallbackData
 {
-    sutil::Camera& camera;
-    unsigned int& accumulation_frame;
+	sutil::Camera& camera;
+	unsigned int& accumulation_frame;
 };
 
-void keyCallback( GLFWwindow* window, int key, int scancode, int action, int mods )
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    bool handled = false;
+	bool handled = false;
 
-    if( action == GLFW_PRESS )
-    {
-        switch( key )
-        {
-            case GLFW_KEY_Q:
-            case GLFW_KEY_ESCAPE:
-                if( context )
-                    context->destroy();
-                if( window )
-                    glfwDestroyWindow( window );
-                glfwTerminate();
-                exit(EXIT_SUCCESS);
+	if (action == GLFW_PRESS)
+	{
+		switch (key)
+		{
+		case GLFW_KEY_Q:
+		case GLFW_KEY_ESCAPE:
+			if (context)
+				context->destroy();
+			if (window)
+				glfwDestroyWindow(window);
+			glfwTerminate();
+			exit(EXIT_SUCCESS);
 
-            case( GLFW_KEY_S ):
-            {
-				const std::string outputImage = SAVE_DIR + std::string("out") + ".png";
-                std::cerr << "Saving current frame to '" << outputImage << "'\n";
-                sutil::writeBufferToFile( outputImage.c_str(), getOutputBuffer() );
-                handled = true;
-                break;
-            }
-            case( GLFW_KEY_F ):
-            {
-               CallbackData* cb = static_cast<CallbackData*>( glfwGetWindowUserPointer( window ) );
-               cb->camera.reset_lookat();
-               cb->accumulation_frame = 0;
-               handled = true;
-               break;
-            }
-			case ( GLFW_KEY_C ) :
-			{
-				CallbackData* cb = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
-				optix::float3 pos = cb->camera.camera_eye();
-				optix::float3 lookat = cb->camera.camera_lookat();
-				optix::float3 up = cb->camera.camera_up();
-				std::cerr << "Camera" << "\n";
-				std::cerr << "\tposition " << pos.x << " " << pos.y << " " << pos.z << "\n";
-				std::cerr << "\tlook_at " << lookat.x << " " << lookat.y << " " << lookat.z << "\n";
-				std::cerr << "\tup " << up.x << " " << up.y << " " << up.z << "\n";
-			}
-        }
-    }
+		case(GLFW_KEY_S) :
+		{
+			const std::string outputImage = SAVE_DIR + std::string("out") + ".png";
+			std::cerr << "Saving current frame to '" << outputImage << "'\n";
+			sutil::writeBufferToFile(outputImage.c_str(), getOutputBuffer());
+			handled = true;
+			break;
+		}
+		case(GLFW_KEY_F) :
+		{
+			CallbackData* cb = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+			cb->camera.reset_lookat();
+			cb->accumulation_frame = 0;
+			handled = true;
+			break;
+		}
+		case (GLFW_KEY_C) :
+		{
+			CallbackData* cb = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+			optix::float3 pos = cb->camera.camera_eye();
+			optix::float3 lookat = cb->camera.camera_lookat();
+			optix::float3 up = cb->camera.camera_up();
+			std::cerr << "Camera" << "\n";
+			std::cerr << "\tposition " << pos.x << " " << pos.y << " " << pos.z << "\n";
+			std::cerr << "\tlook_at " << lookat.x << " " << lookat.y << " " << lookat.z << "\n";
+			std::cerr << "\tup " << up.x << " " << up.y << " " << up.z << "\n";
+		}
+		}
+	}
 
-    if (!handled) {
-        // forward key event to imgui
-        ImGui_ImplGlfw_KeyCallback( window, key, scancode, action, mods );
-    }
+	if (!handled) {
+		// forward key event to imgui
+		ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+	}
 }
 
-void windowSizeCallback( GLFWwindow* window, int w, int h )
+void windowSizeCallback(GLFWwindow* window, int w, int h)
 {
-    if (w < 0 || h < 0) return;
+	if (w < 0 || h < 0) return;
 
-    const unsigned width = (unsigned)w;
-    const unsigned height = (unsigned)h;
+	const unsigned width = (unsigned)w;
+	const unsigned height = (unsigned)h;
 
-    CallbackData* cb = static_cast<CallbackData*>( glfwGetWindowUserPointer( window ) );
-    if ( cb->camera.resize( width, height ) ) {
-        cb->accumulation_frame = 0;
-    }
+	CallbackData* cb = static_cast<CallbackData*>(glfwGetWindowUserPointer(window));
+	if (cb->camera.resize(width, height)) {
+		cb->accumulation_frame = 0;
+	}
 
-    sutil::resizeBuffer( getOutputBuffer(), width, height );
-    sutil::resizeBuffer( context[ "accum_buffer" ]->getBuffer(), width, height );
+	sutil::resizeBuffer(getOutputBuffer(), width, height);
+	sutil::resizeBuffer(context["accum_buffer"]->getBuffer(), width, height);
 
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1, 0, 1, -1, 1);
-    glViewport(0, 0, width, height);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, 1, 0, 1, -1, 1);
+	glViewport(0, 0, width, height);
 }
 
 
@@ -870,87 +870,87 @@ void windowSizeCallback( GLFWwindow* window, int w, int h )
 //
 //------------------------------------------------------------------------------
 
-GLFWwindow* glfwInitialize( )
+GLFWwindow* glfwInitialize()
 {
-    GLFWwindow* window = sutil::initGLFW();
+	GLFWwindow* window = sutil::initGLFW();
 
-    // Note: this overrides imgui key callback with our own.  We'll chain this.
-    glfwSetKeyCallback( window, keyCallback );
+	// Note: this overrides imgui key callback with our own.  We'll chain this.
+	glfwSetKeyCallback(window, keyCallback);
 
-    glfwSetWindowSize( window, (int)scene->properties.width, (int)scene->properties.height);
-    glfwSetWindowSizeCallback( window, windowSizeCallback );
+	glfwSetWindowSize(window, (int)scene->properties.width, (int)scene->properties.height);
+	glfwSetWindowSizeCallback(window, windowSizeCallback);
 
-    return window;
+	return window;
 }
 
 
-void glfwRun( GLFWwindow* window, sutil::Camera& camera, const optix::Group top_group )
+void glfwRun(GLFWwindow* window, sutil::Camera& camera, const optix::Group top_group)
 {
-    // Initialize GL state
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(0, 1, 0, 1, -1, 1 );
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glViewport(0, 0, scene->properties.width, scene->properties.height);
+	// Initialize GL state
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, 1, 0, 1, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glViewport(0, 0, scene->properties.width, scene->properties.height);
 
-    unsigned int frame_count = 0;
-    unsigned int accumulation_frame = 0;
-    float transmittance_log_scale = 0.0f;
+	unsigned int frame_count = 0;
+	unsigned int accumulation_frame = 0;
+	float transmittance_log_scale = 0.0f;
 	int max_depth = scene->properties.max_depth;
 	lastTime = sutil::currentTime();
 
-    // Expose user data for access in GLFW callback functions when the window is resized, etc.
-    // This avoids having to make it global.
-    CallbackData cb = { camera, accumulation_frame };
-    glfwSetWindowUserPointer( window, &cb );
+	// Expose user data for access in GLFW callback functions when the window is resized, etc.
+	// This avoids having to make it global.
+	CallbackData cb = { camera, accumulation_frame };
+	glfwSetWindowUserPointer(window, &cb);
 
-    while( !glfwWindowShouldClose( window ) )
-    {
+	while (!glfwWindowShouldClose(window))
+	{
 
-        glfwPollEvents();                                                        
+		glfwPollEvents();
 
-        ImGui_ImplGlfw_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
 
-        ImGuiIO& io = ImGui::GetIO();
-        
-        // Let imgui process the mouse first
-        if (!io.WantCaptureMouse) {
+		ImGuiIO& io = ImGui::GetIO();
 
-            double x, y;
-            glfwGetCursorPos( window, &x, &y );
+		// Let imgui process the mouse first
+		if (!io.WantCaptureMouse) {
 
-            if ( camera.process_mouse( (float)x, (float)y, ImGui::IsMouseDown(0), ImGui::IsMouseDown(1), ImGui::IsMouseDown(2) ) ) {
-                accumulation_frame = 0;
-            }
-        }
+			double x, y;
+			glfwGetCursorPos(window, &x, &y);
 
-        // imgui pushes
-        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,   ImVec2(0,0) );
-        ImGui::PushStyleVar(ImGuiStyleVar_Alpha,          0.6f        );
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2.0f        );
+			if (camera.process_mouse((float)x, (float)y, ImGui::IsMouseDown(0), ImGui::IsMouseDown(1), ImGui::IsMouseDown(2))) {
+				accumulation_frame = 0;
+			}
+		}
 
-		
-        sutil::displayFps( frame_count++ );
-		sutil::displaySpp( accumulation_frame );
+		// imgui pushes
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2.0f);
 
-        {
-            static const ImGuiWindowFlags window_flags = 
-                    ImGuiWindowFlags_NoTitleBar |
-                    ImGuiWindowFlags_AlwaysAutoResize |
-                    ImGuiWindowFlags_NoMove |
-                    ImGuiWindowFlags_NoScrollbar;
 
-            ImGui::SetNextWindowPos( ImVec2( 2.0f, 70.0f ) );
-            ImGui::Begin("controls", 0, window_flags );
-            if ( ImGui::CollapsingHeader( "Controls", ImGuiTreeNodeFlags_DefaultOpen ) ) {
+		sutil::displayFps(frame_count++);
+		sutil::displaySpp(accumulation_frame);
+
+		{
+			static const ImGuiWindowFlags window_flags =
+				ImGuiWindowFlags_NoTitleBar |
+				ImGuiWindowFlags_AlwaysAutoResize |
+				ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoScrollbar;
+
+			ImGui::SetNextWindowPos(ImVec2(2.0f, 70.0f));
+			ImGui::Begin("controls", 0, window_flags);
+			if (ImGui::CollapsingHeader("Controls", ImGuiTreeNodeFlags_DefaultOpen)) {
 				if (ImGui::SliderInt("max depth (32)", &max_depth, 1, MAXDEPTH)) {
-                    context["max_depth"]->setInt( max_depth );
-                    accumulation_frame = 0;
-                }
-            }
-            ImGui::End();
-        }
+					context["max_depth"]->setInt(max_depth);
+					accumulation_frame = 0;
+				}
+			}
+			ImGui::End();
+		}
 
 		elapsedTime += sutil::currentTime() - lastTime;
 		if (accumulation_frame == 0)
@@ -958,23 +958,23 @@ void glfwRun( GLFWwindow* window, sutil::Camera& camera, const optix::Group top_
 		sutil::displayElapsedTime(elapsedTime);
 		lastTime = sutil::currentTime();
 
-        // imgui pops
-        ImGui::PopStyleVar( 3 );
+		// imgui pops
+		ImGui::PopStyleVar(3);
 
-        // Render main window
-        context["frame"]->setUint( accumulation_frame++ );
-        context->launch( 0, camera.width(), camera.height() );
-        sutil::displayBufferGL( getOutputBuffer() );
+		// Render main window
+		context["frame"]->setUint(accumulation_frame++);
+		context->launch(0, camera.width(), camera.height());
+		sutil::displayBufferGL(getOutputBuffer());
 
-        // Render gui over it
-        ImGui::Render();
+		// Render gui over it
+		ImGui::Render();
 
-        glfwSwapBuffers( window );
-    }
-    
-    destroyContext();
-    glfwDestroyWindow( window );
-    glfwTerminate();
+		glfwSwapBuffers(window);
+	}
+
+	destroyContext();
+	glfwDestroyWindow(window);
+	glfwTerminate();
 }
 
 
@@ -984,35 +984,35 @@ void glfwRun( GLFWwindow* window, sutil::Camera& camera, const optix::Group top_
 //
 //------------------------------------------------------------------------------
 
-void printUsageAndExit( const std::string& argv0 )
+void printUsageAndExit(const std::string& argv0)
 {
-    std::cerr << "\nUsage: " << argv0 << " [options]\n";
-    std::cerr <<
-        "App Options:\n"
-        "  -h | --help                  Print this usage message and exit. \n"
-        "  -f | --file <output_file>    Save image to file and exit. \n"
-        "  -n | --nopbo                 Disable GL interop for display buffer. (off/on) \n"
+	std::cerr << "\nUsage: " << argv0 << " [options]\n";
+	std::cerr <<
+		"App Options:\n"
+		"  -h | --help                  Print this usage message and exit. \n"
+		"  -f | --file <output_file>    Save image to file and exit. \n"
+		"  -n | --nopbo                 Disable GL interop for display buffer. (off/on) \n"
 		"     | --normal                Save extra normal map of output image to file and exit. \n"
 		"  -s | --scene                 Provide a scene file for rendering. \n"
 		"  -p | --spp                   The number of samples per pixel. (default: 256) \n"
 		"  -v | --visual                Visual mode. (off: 0, on: otherwise, default: 0) \n"
 		"  -r | --random                Random camera/materials/HDR envmap. (off/on) \n"
-        "App Keystrokes:\n"
-        "  q  Quit\n"
-        "  s  Save image to '" << SAMPLE_NAME << ".png'\n"
-        "  f  Re-center camera\n"
+		"App Keystrokes:\n"
+		"  q  Quit\n"
+		"  s  Save image to '" << SAMPLE_NAME << ".png'\n"
+		"  f  Re-center camera\n"
 		"  c  Show current camera attributes\n"
-        "\n"
-        << std::endl;
+		"\n"
+		<< std::endl;
 
-    exit(EXIT_SUCCESS);
+	exit(EXIT_SUCCESS);
 }
 
 
-int main( int argc, char** argv )
+int main(int argc, char** argv)
 {
-    bool use_pbo = true;
-    std::string scene_file;
+	bool use_pbo = true;
+	std::string scene_file;
 	std::string out_file;
 	unsigned int num_frames = 256; // Default
 	bool visual = false;
@@ -1020,24 +1020,24 @@ int main( int argc, char** argv )
 	bool random = false;
 	bool normal = false;
 	//
-    for( int i=1; i<argc; ++i )
-    {
-        const std::string arg(argv[i]);
+	for (int i = 1; i < argc; ++i)
+	{
+		const std::string arg(argv[i]);
 
-        if( arg == "-h" || arg == "--help" )
-        {
+		if (arg == "-h" || arg == "--help")
+		{
 			printUsageAndExit(argv[0]);
-        }
-        else if( arg == "-f" || arg == "--file" )
-        {
-            if( i == argc - 1 )
-            {
-                std::cerr << "Option '" << arg << "' requires additional argument.\n";
+		}
+		else if (arg == "-f" || arg == "--file")
+		{
+			if (i == argc - 1)
+			{
+				std::cerr << "Option '" << arg << "' requires additional argument.\n";
 				printUsageAndExit(argv[0]);
-            }
-            out_file = argv[++i];
-        }
-		else if ( arg == "-s" || arg == "--scene" )
+			}
+			out_file = argv[++i];
+		}
+		else if (arg == "-s" || arg == "--scene")
 		{
 			if (i == argc - 1)
 			{
@@ -1046,7 +1046,7 @@ int main( int argc, char** argv )
 			}
 			scene_file = argv[++i];
 		}
-		else if ( arg == "-p" || arg == "--spp" )
+		else if (arg == "-p" || arg == "--spp")
 		{
 			if (i == argc - 1)
 			{
@@ -1076,10 +1076,10 @@ int main( int argc, char** argv )
 			}
 			visual = strcmp(argv[++i], "0") == 0 ? false : true;
 		}
-        else if ( arg == "-n" || arg == "--nopbo" )
-        {
-            use_pbo = false;
-        }
+		else if (arg == "-n" || arg == "--nopbo")
+		{
+			use_pbo = false;
+		}
 		else if (arg == "--normal")
 		{
 			normal = true;
@@ -1088,12 +1088,12 @@ int main( int argc, char** argv )
 		{
 			random = true;
 		}
-        else if( arg[0] == '-' )
-        {
-            std::cerr << "Unknown option '" << arg << "'\n";
-            printUsageAndExit( argv[0] );
-        }
-    }
+		else if (arg[0] == '-')
+		{
+			std::cerr << "Unknown option '" << arg << "'\n";
+			printUsageAndExit(argv[0]);
+		}
+	}
 
 	try
 	{
@@ -1172,7 +1172,7 @@ int main( int argc, char** argv )
 		updateAabbLights(aabb1);
 		context["sysLightParameters"]->setBuffer(m_bufferLightParameters);
 		context["sysNumberOfLights"]->setInt(scene->lights.size());
-		const optix::Aabb aabb = createGeometry(top_group); // ÀÌ°Ô ¾ø¾îµµ lightÀº Àû¿ëµÊ. ´«¿¡ ¾Èº¸ÀÏ »Ó.
+		const optix::Aabb aabb = createGeometry(top_group); // ï¿½Ì°ï¿½ ï¿½ï¿½ï¿½îµµ lightï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ ï¿½Èºï¿½ï¿½ï¿½ ï¿½ï¿½.
 		*/
 
 		context->validate();
@@ -1223,24 +1223,24 @@ int main( int argc, char** argv )
 					std::fstream file;
 					file.open(path_file, std::ios::out | std::ios::binary);
 					if (!file)
-						std::cerr << "Error in creating a path file" << std::endl;
+					std::cerr << "Error in creating a path file" << std::endl;
 					else
 					{
-						RTbuffer buf = getMBFBuffer()->get();
-						float* data;
-						rtBufferMap(buf, (void**)&data);
-						RTsize width, height, depth;
-						getMBFBuffer()->getSize(width, height, depth);
-						file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
-						file.close();
-						rtBufferUnmap(buf);
+					RTbuffer buf = getMBFBuffer()->get();
+					float* data;
+					rtBufferMap(buf, (void**)&data);
+					RTsize width, height, depth;
+					getMBFBuffer()->getSize(width, height, depth);
+					file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
+					file.close();
+					rtBufferUnmap(buf);
 
-						std::cerr << "Wrote path file " << path_file << std::endl;
+					std::cerr << "Wrote path file " << path_file << std::endl;
 					}
 					*/
 				}
 
-				std::cerr << "Wrote " << out_file <<  std::endl;
+				std::cerr << "Wrote " << out_file << std::endl;
 				destroyContext();
 			}
 		}
@@ -1267,7 +1267,7 @@ int main( int argc, char** argv )
 			}
 
 			// Random number generator setup; should be set before run setRandomX(..) functions
-			srand(static_cast <unsigned> (time(0))); 
+			srand(static_cast <unsigned> (time(0)));
 
 			for (int r = 0; r < 50; r++)
 			{
@@ -1298,8 +1298,8 @@ int main( int argc, char** argv )
 			}
 			destroyContext();
 		}
-        return 0;
-    }
-    SUTIL_CATCH( context->get() )
+		return 0;
+	}
+	SUTIL_CATCH(context->get())
 }
 
