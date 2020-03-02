@@ -33,6 +33,8 @@
 #include "path.h"
 #include "rt_function.h"
 #include "random.h"
+#include <assert.h>
+#include <stdio.h>
 
 using namespace optix;
 
@@ -46,11 +48,12 @@ rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
 rtBuffer<uchar4, 2>              output_buffer;
-rtBuffer<float3, 2>              normal_buffer;
-//rtBuffer<pathFeatures6, 3>       mbf_buffer; /* Multiple-bounced feature buffer */
+//rtBuffer<float3, 2>              normal_buffer;
+rtBuffer<pathFeatures6, 3>       mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
 rtDeclareVariable(unsigned int,  frame, , );
+rtDeclareVariable(int,			 mbpf_frames, , );
 rtDeclareVariable(uint2,         launch_index, rtLaunchIndex, );
 
 
@@ -116,7 +119,6 @@ RT_PROGRAM void pinhole_camera()
 
 	float3 result = make_float3( 0.0f );
 
-	/* Path feature (length = 6) */
 	pathFeatures6 pf6 {
 		{ optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f) },
 		{ optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f) },
@@ -126,24 +128,21 @@ RT_PROGRAM void pinhole_camera()
 	// Main render loop. This is not recursive, and for high ray depths
 	// will generally perform better than tracing radiance rays recursively
 	// in closest hit programs.
+	//printf("here1\n");
 	for (;;) {
-		prd.radiance = make_float3(0.0f);
-		prd.albedo = make_float3(0.0f);
-		prd.normal = make_float3(0.0f);
-
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
-
-		//if (prd.depth == 0 && frame == 0)
-		//	normal_buffer[launch_index] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ? 
-		//								  prd.normal : 
-		//								  0.5f * normalize(prd.normal) + make_float3(0.5f); // normalize(prd.normal)
-		
+		//printf("here2\n");
 		/* Path features */
-		if (prd.depth < 6) {
-			pf6.rad[prd.depth] = LinearToSrgb(ToneMap(prd.radiance, 1.5));
-			pf6.alb[prd.depth] = prd.albedo;
+		if (prd.depth < 5)
+		{
+			pf6.rad[prd.depth + 1] = prd.radiance; // rad[1], ..., rad[5]
+		}
+
+		if (prd.depth < 6)
+		{
+			pf6.alb[prd.depth] = prd.albedo; // alb[0], ..., alb[5]
 			pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
 				prd.normal :
 				0.5f * normalize(prd.normal) + make_float3(0.5f);
@@ -158,25 +157,26 @@ RT_PROGRAM void pinhole_camera()
 		ray_origin = prd.origin;
 		ray_direction = prd.bsdfDir;
 	}
-
+	pf6.rad[0] = prd.radiance;
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
-	float3 acc_nor = normal_buffer[launch_index];
+	//float3 acc_nor = normal_buffer[launch_index];
 	if( frame > 0 ) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
-		acc_nor = lerp(acc_nor, pf6.alb[0], 1.0f / static_cast<float>(frame + 1));
+		//acc_nor = lerp(acc_nor, pf6.alb[0], 1.0f / static_cast<float>(frame + 1));
 	} else {
 		acc_val = make_float4(result, 0.f);
-		acc_nor = pf6.alb[0];
-		//mbf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
+		//acc_nor = pf6.alb[0];
 	}
 
 	float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));
 
-	output_buffer[launch_index] = make_color(make_float3(val));
+	output_buffer[launch_index] = make_color(make_float3(val)); // uint
 	accum_buffer[launch_index] = acc_val;
-	normal_buffer[launch_index] = acc_nor;
+	if (frame < mbpf_frames)
+		mbpf_buffer[make_uint3(launch_index.x, launch_index.y, frame)] = pf6;
+	//normal_buffer[launch_index] = acc_nor;
 }
 
 RT_PROGRAM void exception()

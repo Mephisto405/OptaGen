@@ -82,7 +82,7 @@ RT_PROGRAM void closest_hit()
 	else if (light.lightType == SPHERE)
 	{
 		const float3 lightNormal = normalize(front_hit_point - light.position);
-		const float cosTheta = dot(-ray.direction, lightNormal);
+		cosTheta = dot(-ray.direction, lightNormal);
 	}
 
 
@@ -91,14 +91,18 @@ RT_PROGRAM void closest_hit()
 		if (prd.depth == 0 || prd.specularBounce)
 		{
 			prd.radiance += light.emission * prd.throughput;
-			prd.albedo = light.emission * prd.throughput;//LinearToSrgb(ToneMap(light.emission * prd.throughput, 1.5));
+
+			// Path feature updating
+			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
 			prd.normal = ffnormal;
 		}
 		else
 		{
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
-			prd.albedo = LinearToSrgb(ToneMap(powerHeuristic(prd.pdf, lightPdf) * prd.throughput * light.emission, 1.5));
+			
+			// Path feature updating
+			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
 			prd.normal = ffnormal;
 		}
 	}

@@ -176,16 +176,16 @@ static Buffer getOutputBuffer()
 	return context["output_buffer"]->getBuffer();
 }
 
-
+/*
 static Buffer getNormalBuffer()
 {
 	return context["normal_buffer"]->getBuffer();
 }
-
+*/
 
 static Buffer getMBFBuffer()
 {
-	return context["mbf_buffer"]->getBuffer();
+	return context["mbpf_buffer"]->getBuffer();
 }
 
 
@@ -215,20 +215,21 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context["cutoff_color"]->setFloat(0.0f, 0.0f, 0.0f);
 	context["frame"]->setUint(0u);
 	context["scene_epsilon"]->setFloat(1.e-3f);
+	context["mbpf_frames"]->setInt(num_frames);
 
 	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_UNSIGNED_BYTE4,
 		scene->properties.width, scene->properties.height, use_pbo);
 	context["output_buffer"]->set(buffer);
 
-	Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3,
-		scene->properties.width, scene->properties.height);
-	context["normal_buffer"]->set(normal_buffer);
+	//Buffer normal_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_FLOAT3,
+	//	scene->properties.width, scene->properties.height);
+	//context["normal_buffer"]->set(normal_buffer);
 
-	/* Multiple-bounced feature buffer
-	Buffer mbf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
+	// Multiple-bounce path feature buffer
+	Buffer mbpf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
 	scene->properties.width, scene->properties.height, num_frames);
-	mbf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
-	context["mbf_buffer"]->set(mbf_buffer); */
+	mbpf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+	context["mbpf_buffer"]->set(mbpf_buffer);
 
 	// Accumulation buffer
 	Buffer accum_buffer = context->createBuffer(RT_BUFFER_INPUT_OUTPUT | RT_BUFFER_GPU_LOCAL,
@@ -1305,8 +1306,9 @@ int main(int argc, char** argv)
 
 		ilInit();
 
-		if (mode == M_REF)
-			createContext(use_pbo, scene->properties.max_depth, 1);
+		num_of_frames = 4;
+		if (mode == M_REF || visual || out_file.empty())
+			createContext(use_pbo, scene->properties.max_depth, 4);
 		else
 			createContext(use_pbo, scene->properties.max_depth, num_of_frames);
 

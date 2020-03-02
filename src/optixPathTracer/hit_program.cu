@@ -124,11 +124,10 @@ RT_PROGRAM void closest_hit()
 	state.ffnormal = ffnormal;
 	prd.wo = -ray.direction;
 
+	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
-	prd.albedo = mat.color;
-	prd.normal = ffnormal;
 
-	//TODO: Clean up handling of specular bounces
+	// TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
 
 	// Direct light Sampling
@@ -139,6 +138,10 @@ RT_PROGRAM void closest_hit()
 	sysBRDFSample[mat.brdf](mat, state, prd);
 	sysBRDFPdf[mat.brdf](mat, state, prd);
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
+
+	// Path feature updating
+	prd.albedo = mat.color;
+	prd.normal = ffnormal;
 
 	if (prd.pdf > 0.0f)
 		prd.throughput *= f / prd.pdf;

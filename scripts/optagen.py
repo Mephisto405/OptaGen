@@ -59,10 +59,10 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 ##
 # Rendering
 print('[] Rendering start...')
-for scene in scenes[:1]:
+for scene in scenes:
     cmd = [
         args.exe,
-        '-m', str(M_REF),
+        '-M', str(M_REF),
         '-s', scene,
         '-d', args.hdr,
         '-i', path.join(input_dir, scene.split('\\')[-2] + '.dat'),
@@ -75,4 +75,3 @@ for scene in scenes[:1]:
         '-v', "0"
     ]
     cmd_out = subprocess.check_output(cmd)
-    os.remove(tmp_scene)
