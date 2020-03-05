@@ -1,6 +1,7 @@
 import os
 import random
 import argparse
+import numpy as np 
 import os.path as path
 from subprocess import check_output, STDOUT, CalledProcessError
 
@@ -59,24 +60,31 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 # Rendering
 print('[] Rendering start...')
 for scene in scenes:
-    cmd = [
-        args.exe,
-        '-M', str(args.mode),
-        '-s', scene,
-        '-d', args.hdr,
-        '-i', path.join(input_dir, scene.split('\\')[-2] + '.dat'),
-        '-o', path.join(ref_dir, scene.split('\\')[-2] + '.png'),
-        '-n', str(patches_per_scenes),
-        '-p', str(args.spp),
-        '-m', str(args.mspp),
-        '-r', str(args.roc),
-        '-w', "1280",
-        '-v', "0"
-    ]
-
     try:
-        cmd_out = check_output(cmd, stderr=STDOUT)
-    except CalledProcessError as exc:
-        print(exc.output)
+        arr = np.load(path.join(input_dir, scene.split('\\')[-2] + '.npy'))
+        if arr.shape != (1280, 1280, 4, 54):
+            raise ValueError()
+    except ValueError:
+        cmd = [
+            args.exe,
+            '-M', str(args.mode),
+            '-s', scene,
+            '-d', args.hdr,
+            '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
+            '-o', path.join(ref_dir, scene.split('\\')[-2] + '.npy'),
+            '-n', str(patches_per_scenes),
+            '-p', str(args.spp),
+            '-m', str(args.mspp),
+            '-r', str(args.roc),
+            '-w', "1280",
+            '-v', "0"
+        ]
+
+        try:
+            cmd_out = check_output(cmd, stderr=STDOUT)
+        except CalledProcessError as exc:
+            print(exc.output)
+        else:
+            assert 0
     else:
-        assert 0
+        continue

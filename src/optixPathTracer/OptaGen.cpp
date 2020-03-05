@@ -219,7 +219,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context["scene_epsilon"]->setFloat(1.e-3f);
 	context["mbpf_frames"]->setInt(num_frames);
 
-	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_UNSIGNED_BYTE4,
+	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_FLOAT3,
 		scene->properties.width, scene->properties.height, use_pbo);
 	context["output_buffer"]->set(buffer);
 
@@ -1115,6 +1115,7 @@ int main(int argc, char** argv)
 				printUsageAndExit();
 			}
 			in_file = argv[++i];
+			in_file = in_file.substr(0, in_file.find_last_of(".")) + ".npy";
 		}
 		else if (arg == "-o" || arg == "--out")
 		{
@@ -1124,6 +1125,7 @@ int main(int argc, char** argv)
 				printUsageAndExit();
 			}
 			out_file = argv[++i];
+			out_file = out_file.substr(0, in_file.find_last_of(".")) + ".npy";
 		}
 		else if (arg == "-n" || arg == "--num")
 		{
@@ -1415,30 +1417,13 @@ int main(int argc, char** argv)
 						context->launch(0, scene->properties.width, scene->properties.height);
 					}
 					std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "s\n";
-
-					/*
-					std::fstream file;
-					file.open(in_file, std::ios::out | std::ios::binary);
-					if (!file) {
-						std::cerr << "Error in creating a path file! " << std::endl;
-						exit(EXIT_FAILURE);
-					}
-					RTbuffer buf = getMBFBuffer()->get();
-					float* data;
-					rtBufferMap(buf, (void**)&data);
-					RTsize width, height, samples;
-					getMBFBuffer()->getSize(width, height, samples);
-					file.write((char*)data, width * height * samples * getMBFBuffer()->getElementSize());
-					file.close();
-					rtBufferUnmap(buf);
-					*/
-
+					
 					RTbuffer buf = getMBFBuffer()->get();
 					float* data;
 					rtBufferMap(buf, (void**)&data);
 					RTsize width, height;
 					getMBFBuffer()->getSize(width, height);
-					cnpy::npy_save(in_file.substr(0, in_file.find_last_of(".")) + ".npy",
+					cnpy::npy_save(in_file,
 						(float *)data,
 						{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
 						"w");
@@ -1459,7 +1444,18 @@ int main(int argc, char** argv)
 					}
 					std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "s\n";
 
-					sutil::writeBufferToFile(out_file.c_str(), getOutputBuffer());
+					RTbuffer buf = getOutputBuffer()->get();
+					float* data;
+					rtBufferMap(buf, (void**)&data);
+					RTsize width, height;
+					getOutputBuffer()->getSize(width, height);
+					cnpy::npy_save(out_file,
+						(float *)data,
+						{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
+						"w");
+					rtBufferUnmap(buf);
+					delete data;
+
 					std::cerr << "[Output] (ref) " << out_file << std::endl;
 				}
 
@@ -1519,30 +1515,14 @@ int main(int argc, char** argv)
 						}
 						std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "\n";
 
-						in_fn = in_file.substr(0, in_file.find('.')) + "_" + std::to_string(r) + ".dat";
-						/*
-						std::fstream file;
-						file.open(in_fn, std::ios::out | std::ios::binary);
-						if (!file) {
-							std::cerr << "Error in creating a path file! " << std::endl;
-							exit(EXIT_FAILURE);
-						}
-						RTbuffer buf = getMBFBuffer()->get();
-						float* data;
-						rtBufferMap(buf, (void**)&data);
-						RTsize width, height, depth;
-						getMBFBuffer()->getSize(width, height, depth);
-						file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
-						file.close();
-						rtBufferUnmap(buf);
-						*/
+						in_fn = in_file.substr(0, in_file.find('.')) + "_" + std::to_string(r) + ".npy";
 
 						RTbuffer buf = getMBFBuffer()->get();
 						float* data;
 						rtBufferMap(buf, (void**)&data);
 						RTsize width, height;
 						getMBFBuffer()->getSize(width, height);
-						cnpy::npy_save(in_fn.substr(0, in_fn.find_last_of(".")) + ".npy",
+						cnpy::npy_save(in_fn,
 							(float *)data,
 							{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
 							"w");
@@ -1563,8 +1543,20 @@ int main(int argc, char** argv)
 						}
 						std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "\n";
 
-						out_fn = out_file.substr(0, out_file.find('.')) + "_" + std::to_string(r) + ".png";
-						sutil::writeBufferToFile(out_fn.c_str(), getOutputBuffer());
+						out_fn = out_file.substr(0, out_file.find('.')) + "_" + std::to_string(r) + ".npy";
+						
+						RTbuffer buf = getOutputBuffer()->get();
+						float* data;
+						rtBufferMap(buf, (void**)&data);
+						RTsize width, height;
+						getOutputBuffer()->getSize(width, height);
+						cnpy::npy_save(out_fn,
+							(float *)data,
+							{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
+							"w");
+						rtBufferUnmap(buf);
+						delete data;
+
 						std::cerr << "[Output] (ref) " << out_fn << std::endl;
 					}
 				}

@@ -47,8 +47,7 @@ rtDeclareVariable(float3,        bad_color, , );
 rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
-rtBuffer<uchar4, 2>              output_buffer;
-//rtBuffer<float3, 2>              normal_buffer;
+rtBuffer<float3, 2>              output_buffer;
 rtBuffer<pathFeatures6[4], 2>    mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
@@ -142,7 +141,7 @@ RT_PROGRAM void pinhole_camera()
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
-		//printf("here2\n");
+		
 		/* Path features */
 		if (prd.depth < 5)
 		{
@@ -170,27 +169,21 @@ RT_PROGRAM void pinhole_camera()
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
-	//float3 acc_nor = normal_buffer[launch_index];
 	if( frame > 0 ) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
-		//acc_nor = lerp(acc_nor, pf6.alb[0], 1.0f / static_cast<float>(frame + 1));
 	} else {
 		acc_val = make_float4(result, 0.f);
-		//acc_nor = pf6.alb[0];
 	}
 
-	float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));
-
-	output_buffer[launch_index] = make_color(make_float3(val)); // uint
+	output_buffer[launch_index] = make_float3(acc_val); // uint
 	accum_buffer[launch_index] = acc_val;
 	if (frame < mbpf_frames)
 		mbpf_buffer[launch_index][frame] = pf6;
-	//normal_buffer[launch_index] = acc_nor;
 }
 
 RT_PROGRAM void exception()
 {
 	const unsigned int code = rtGetExceptionCode();
 	rtPrintf( "Caught exception 0x%X at launch index (%d,%d)\n", code, launch_index.x, launch_index.y );
-	output_buffer[launch_index] = make_color( bad_color );
+	output_buffer[launch_index] = bad_color;
 }
