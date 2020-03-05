@@ -67,6 +67,8 @@
 #include <dirent.h>
 #include <stdint.h>
 
+#include "cnpy.h"
+
 #define M_REF 0
 #define M_FET 1
 #define M_ALL 2
@@ -227,8 +229,8 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 
 	// Multiple-bounce path feature buffer
 	Buffer mbpf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
-	scene->properties.width, scene->properties.height, num_frames);
-	mbpf_buffer->setElementSize(sizeof(pathFeatures6)); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+	scene->properties.width, scene->properties.height);
+	mbpf_buffer->setElementSize(sizeof(pathFeatures6) * num_frames); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
 	context["mbpf_buffer"]->set(mbpf_buffer);
 
 	// Accumulation buffer
@@ -1306,11 +1308,7 @@ int main(int argc, char** argv)
 
 		ilInit();
 
-		num_of_frames = 4;
-		if (mode == M_REF || visual || out_file.empty())
-			createContext(use_pbo, scene->properties.max_depth, 4);
-		else
-			createContext(use_pbo, scene->properties.max_depth, num_of_frames);
+		createContext(use_pbo, scene->properties.max_depth, num_of_frames);
 
 		// Load textures
 		for (int i = 0; i < scene->texture_map.size(); i++)
@@ -1405,6 +1403,8 @@ int main(int argc, char** argv)
 				else
 					std::cerr << "[Samples] (feat) " << num_of_frames << ", (ref) " << max_ref_frames << " (per-pixel)\n";
 
+				std::cerr << "[Film size] " << scene->properties.width << ", " << scene->properties.height << "\n";
+
 				double startTime = sutil::currentTime();
 
 				if (mode == M_FET || mode == M_ALL)
@@ -1416,6 +1416,7 @@ int main(int argc, char** argv)
 					}
 					std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "s\n";
 
+					/*
 					std::fstream file;
 					file.open(in_file, std::ios::out | std::ios::binary);
 					if (!file) {
@@ -1425,11 +1426,25 @@ int main(int argc, char** argv)
 					RTbuffer buf = getMBFBuffer()->get();
 					float* data;
 					rtBufferMap(buf, (void**)&data);
-					RTsize width, height, depth;
-					getMBFBuffer()->getSize(width, height, depth);
-					file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
+					RTsize width, height, samples;
+					getMBFBuffer()->getSize(width, height, samples);
+					file.write((char*)data, width * height * samples * getMBFBuffer()->getElementSize());
 					file.close();
 					rtBufferUnmap(buf);
+					*/
+
+					RTbuffer buf = getMBFBuffer()->get();
+					float* data;
+					rtBufferMap(buf, (void**)&data);
+					RTsize width, height;
+					getMBFBuffer()->getSize(width, height);
+					cnpy::npy_save(in_file.substr(0, in_file.find_last_of(".")) + ".npy",
+						(float *)data,
+						{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
+						"w");
+					rtBufferUnmap(buf);
+					delete data;
+
 					std::cerr << "[Output] (feat) " << in_file << "\n";
 
 					startTime = sutil::currentTime();
@@ -1484,7 +1499,6 @@ int main(int argc, char** argv)
 					setRandomMaterials();
 					//if (r % 100 == 0)
 					//	setRandomBackground(hdrs_home, entries);
-					std::cerr << scene->lights.size() << std::endl;
 
 					if (mode == M_REF)
 						std::cerr << "[Frames] " << max_ref_frames << "\n";
@@ -1492,6 +1506,8 @@ int main(int argc, char** argv)
 						std::cerr << "[Frames] " << num_of_frames << "\n";
 					else
 						std::cerr << "[Frames] (feat) " << num_of_frames << ", (ref) " << max_ref_frames << "\n";
+
+					std::cerr << "[Film size] " << scene->properties.width << ", " << scene->properties.height << "\n";
 
 					double startTime = sutil::currentTime();
 					if (mode == M_FET || mode == M_ALL)
@@ -1504,6 +1520,7 @@ int main(int argc, char** argv)
 						std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "\n";
 
 						in_fn = in_file.substr(0, in_file.find('.')) + "_" + std::to_string(r) + ".dat";
+						/*
 						std::fstream file;
 						file.open(in_fn, std::ios::out | std::ios::binary);
 						if (!file) {
@@ -1518,6 +1535,20 @@ int main(int argc, char** argv)
 						file.write((char*)data, width * height * depth * getMBFBuffer()->getElementSize());
 						file.close();
 						rtBufferUnmap(buf);
+						*/
+
+						RTbuffer buf = getMBFBuffer()->get();
+						float* data;
+						rtBufferMap(buf, (void**)&data);
+						RTsize width, height;
+						getMBFBuffer()->getSize(width, height);
+						cnpy::npy_save(in_fn.substr(0, in_fn.find_last_of(".")) + ".npy",
+							(float *)data,
+							{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
+							"w");
+						rtBufferUnmap(buf);
+						delete data;
+
 						std::cerr << "[Output] (feat) " << in_fn << "\n";
 
 						startTime = sutil::currentTime();

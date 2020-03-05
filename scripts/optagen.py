@@ -1,13 +1,14 @@
 import os
 import random
 import argparse
-import subprocess
 import os.path as path
+from subprocess import check_output, STDOUT, CalledProcessError
 
 ##
 # Input
 parser = argparse.ArgumentParser(description='generate a training dataset.')
 parser.add_argument('--exe', type=str, required=True, help='OptaGen renderer.')
+parser.add_argument('--mode', type=int, required=True, help='0: reference-only, 1: feature-only, 2: both')
 parser.add_argument('--root', type=str, required=True, help='directory which contains all OptaGen scene files to use.')
 parser.add_argument('--hdr', type=str, required=True, help='directory containing all hdr environmental map files to use.')
 parser.add_argument('--save', type=str, required=True, help='parent directory to save patches and reference images.')
@@ -18,6 +19,7 @@ parser.add_argument('--roc', type=float, required=False, default=0.9, help='if t
 args = parser.parse_args()
 
 assert os.path.isfile(args.exe), 'EXE is not a valid executable file.'
+assert (args.mode in [0, 1, 2]), '0: reference-only, 1: feature-only, 2: both'
 assert os.path.isdir(args.root), 'ROOT does not exist.'
 assert os.path.isdir(args.hdr), 'HDR does not exist.' 
 if not os.path.isdir(args.save):
@@ -30,14 +32,11 @@ if not os.path.isdir(ref_dir):
     os.mkdir(ref_dir)
 assert args.num >= 10, 'NUM < 10.'
 assert args.spp >= 1 and args.spp <= 32, 'SPP < 1 or SPP > 32. CUDA memory error might occur.'
-assert args.mspp >= 1000 and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
+assert args.mspp >= 32 and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
 assert args.roc > 0.0 and args.roc < 1.0, 'ROC <= 0.0 or ROC >= 1.0.'
 #.\build\bin\Release\OptaGen.exe -m 0 -s C:\Users\Dorian\data_scenes\optagen\bathroom\scene.scene -d C:\Users\Dorian\data_scenes\optagen\HDRS -i C:\Users\Dorian\data_scenes\optagen\bathroom\scene.
 ##
 # Aux. Configurations
-M_REF = 0
-M_FET = 1
-M_ALL = 2
 scenes = []
 for root, dirs, files in os.walk(args.root, topdown=True):
     for name in files:
@@ -62,7 +61,7 @@ print('[] Rendering start...')
 for scene in scenes:
     cmd = [
         args.exe,
-        '-M', str(M_REF),
+        '-M', str(args.mode),
         '-s', scene,
         '-d', args.hdr,
         '-i', path.join(input_dir, scene.split('\\')[-2] + '.dat'),
@@ -71,7 +70,13 @@ for scene in scenes:
         '-p', str(args.spp),
         '-m', str(args.mspp),
         '-r', str(args.roc),
-        '-w', "128",
+        '-w', "1280",
         '-v', "0"
     ]
-    cmd_out = subprocess.check_output(cmd)
+
+    try:
+        cmd_out = check_output(cmd, stderr=STDOUT)
+    except CalledProcessError as exc:
+        print(exc.output)
+    else:
+        assert 0
