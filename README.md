@@ -6,7 +6,7 @@ This work has started on top of a great [Optix-based renderer](https://github.co
 
 ## Disclaimer
 
-The code and document is not polished yet. I will continue to update the code to make it more clean, maintainalbe and robust.
+The code and document are not polished yet. I will continue to update the code to make it more clean, maintainable and robust.
 
 ## Rendering Resources for OptiX
 
@@ -15,12 +15,12 @@ The code and document is not polished yet. I will continue to update the code to
 ## How-to-Build
 
 Please take a look at [how-to-build.txt](./how-to-build.txt)
-*I will write more detailed step-by-step description soon.
+*I will write a more detailed step-by-step description soon.
 
 ## How-to-Run
 
 Please take a look at the main [data generator code](./scripts/optagen.py) and the [feature visualizer code](./scripts/vis_feat.py)
-*I will write more detailed comment soon.
+*I will write more detailed comments soon.
 
 ### Data Configurations
 
@@ -29,7 +29,7 @@ Please take a look at the main [data generator code](./scripts/optagen.py) and t
 
 ## Features 
 
-star signs(*) indicate the original implementation of the author of [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
+The star sign(*) indicates the original implementation of the author of the [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
 
 ### Part 1: Renderer
 
