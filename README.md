@@ -14,12 +14,14 @@ The code and document are not polished yet. I will continue to update the code t
 
 ## How-to-Build
 
-Please take a look at [how-to-build.txt](./how-to-build.txt)
+Please take a look at [how-to-build.txt](./how-to-build.txt).
+
 *I will write a more detailed step-by-step description soon.
 
 ## How-to-Run
 
-Please take a look at the main [data generator code](./scripts/optagen.py) and the [feature visualizer code](./scripts/vis_feat.py)
+Please take a look at the main [data generator code](./scripts/optagen.py) and the [feature visualizer code](./scripts/vis_feat.py).
+
 *I will write more detailed comments soon.
 
 ### Data Configurations
