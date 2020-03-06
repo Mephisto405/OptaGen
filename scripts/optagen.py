@@ -64,7 +64,9 @@ for scene in scenes:
         arr = np.load(path.join(input_dir, scene.split('\\')[-2] + '.npy'))
         if arr.shape != (1280, 1280, 4, 54):
             raise ValueError()
-    except ValueError:
+    except (ValueError, FileNotFoundError):
+        print(scene)
+
         cmd = [
             args.exe,
             '-M', str(args.mode),

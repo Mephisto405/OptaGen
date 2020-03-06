@@ -1125,7 +1125,7 @@ int main(int argc, char** argv)
 				printUsageAndExit();
 			}
 			out_file = argv[++i];
-			out_file = out_file.substr(0, in_file.find_last_of(".")) + ".npy";
+			out_file = out_file.substr(0, out_file.find_last_of(".")) + ".npy";
 		}
 		else if (arg == "-n" || arg == "--num")
 		{
