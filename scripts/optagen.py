@@ -28,12 +28,12 @@ if not os.path.isdir(args.save):
 input_dir = path.join(args.save, 'input')
 if not os.path.isdir(input_dir):
     os.mkdir(input_dir)
-ref_dir = path.join(args.save, 'ref')
-if not os.path.isdir(ref_dir):
-    os.mkdir(ref_dir)
+gt_dir = path.join(args.save, 'gt')
+if not os.path.isdir(gt_dir):
+    os.mkdir(gt_dir)
 assert args.num >= 10, 'NUM < 10.'
 assert args.spp >= 1 and args.spp <= 32, 'SPP < 1 or SPP > 32. CUDA memory error might occur.'
-assert args.mspp >= 32 and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
+assert args.mspp >= args.spp and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
 assert args.roc > 0.0 and args.roc < 1.0, 'ROC <= 0.0 or ROC >= 1.0.'
 #.\build\bin\Release\OptaGen.exe -m 0 -s C:\Users\Dorian\data_scenes\optagen\bathroom\scene.scene -d C:\Users\Dorian\data_scenes\optagen\HDRS -i C:\Users\Dorian\data_scenes\optagen\bathroom\scene.
 ##
@@ -60,6 +60,29 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 # Rendering
 print('[] Rendering start...')
 for scene in scenes:
+    print(scene)
+    cmd = [
+            args.exe,
+            '-M', str(args.mode),
+            '-s', scene,
+            '-d', args.hdr,
+            '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
+            '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
+            '-n', str(patches_per_scenes),
+            '-p', str(args.spp),
+            '-m', str(args.mspp),
+            '-r', str(args.roc),
+            '-w', "1280",
+            '-v', "0"
+        ]
+
+    try:
+        cmd_out = check_output(cmd, stderr=STDOUT)
+    except CalledProcessError as exc:
+        print(exc.output)
+    else:
+        continue
+    """
     try:
         arr = np.load(path.join(input_dir, scene.split('\\')[-2] + '.npy'))
         if arr.shape != (1280, 1280, 4, 54):
@@ -73,7 +96,7 @@ for scene in scenes:
             '-s', scene,
             '-d', args.hdr,
             '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
-            '-o', path.join(ref_dir, scene.split('\\')[-2] + '.npy'),
+            '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
             '-n', str(patches_per_scenes),
             '-p', str(args.spp),
             '-m', str(args.mspp),
@@ -90,3 +113,6 @@ for scene in scenes:
             assert 0
     else:
         continue
+    """
+
+print("[] Processing done.")

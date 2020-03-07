@@ -536,18 +536,23 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 			indoor = false;
 	}
 
+	optix::float3 center = 0.5f * (aabb_min + aabb_max);
+	optix::float3 half_widths = 0.5f * (aabb_max - aabb_min);
+	float margin = 0.7; // safe margin to prevent camera-object occlusion, etc.
+
 	if (indoor)
 	{
 		std::cerr << "Indoor scene" << std::endl;
+
 		camera_lookat = make_float3(
-			randFloat(aabb_min.x, aabb_max.x),
-			randFloat(aabb_min.y, aabb_max.y),
-			randFloat(aabb_min.z, aabb_max.z)
+			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
 			);
 		camera_eye = make_float3(
-			randFloat(aabb_min.x, aabb_max.x),
-			randFloat(aabb_min.y, aabb_max.y),
-			randFloat(aabb_min.z, aabb_max.z)
+			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
 			);
 
 		float prob_lookat, prob_eye, d_lookat, d_eye;
@@ -587,13 +592,11 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 	{
 		std::cerr << "Object scene" << std::endl;
 		camera_lookat = make_float3(
-			randFloat(aabb_min.x, aabb_max.x),
-			randFloat(aabb_min.y, aabb_max.y),
-			randFloat(aabb_min.z, aabb_max.z)
+			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
 			);
 
-		optix::float3 center = 0.5f * (aabb_min + aabb_max);
-		optix::float3 half_widths = 0.5f * (aabb_max - aabb_min);
 		camera_eye = make_float3(
 			randFloat(center.x - 5 * half_widths.x, center.x + 5 * half_widths.x),
 			randFloat(center.y - half_widths.y, center.y + 5 * half_widths.y), // min.y에는 floor가 있는 경우가 많으므로 경계 확장 X
@@ -641,13 +644,13 @@ void setRandomMaterials()
 			scene->materials[i].brdf = BrdfType::DISNEY;
 			scene->materials[i].color = optix::make_float3(randFloat(0.0f, 1.0f), randFloat(0.0f, 1.0f), randFloat(0.0f, 1.0f));
 			scene->materials[i].metallic = randFloat(0.0f, 1.0f);
-			scene->materials[i].subsurface = randFloat(0.0f, 1.0f);
+			scene->materials[i].subsurface = randFloat(0.0f, 0.2f);
 			scene->materials[i].specular = randFloat(0.0f, 1.0f);
 			scene->materials[i].roughness = randFloat(0.0f, 0.6f);
-			scene->materials[i].specularTint = randFloat(0.0f, 1.0f);
-			scene->materials[i].sheen = randFloat(0.0f, 1.0f);
-			scene->materials[i].sheenTint = randFloat(0.0f, 1.0f);
-			scene->materials[i].clearcoat = randFloat(0.0f, 1.0f);
+			scene->materials[i].specularTint = randFloat(0.0f, 0.3f);
+			scene->materials[i].sheen = randFloat(0.0f, 0.2f);
+			scene->materials[i].sheenTint = randFloat(0.0f, 0.7f);
+			scene->materials[i].clearcoat = randFloat(0.0f, 0.3f);
 			scene->materials[i].clearcoatGloss = randFloat(0.0f, 1.0f);
 		}
 		else if (what_brdf < 0.95f)
@@ -656,6 +659,7 @@ void setRandomMaterials()
 			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
 			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
 			scene->materials[i].extIOR = 1.0f;
+			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;
 		}
 		else
 		{
@@ -664,6 +668,7 @@ void setRandomMaterials()
 			scene->materials[i].roughness = powf(10, randFloat(-2.0f, 0.0f));
 			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
 			scene->materials[i].extIOR = 1.0f;
+			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;
 		}
 	}
 	updateMaterialParameters(scene->materials);
@@ -718,13 +723,6 @@ void updateAabbLights(optix::Aabb aabb)
 			}
 		}
 	}
-
-	std::cerr << "xmin " << center.x - w << std::endl;
-	std::cerr << "xmax " << center.x + w << std::endl;
-	std::cerr << "ymin " << center.y - h << std::endl;
-	std::cerr << "ymax " << center.y + h << std::endl;
-	std::cerr << "zmin " << center.z - d << std::endl;
-	std::cerr << "zmax " << center.z + d << std::endl;
 
 	m_bufferLightParameters = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_USER);
 	m_bufferLightParameters->setElementSize(sizeof(LightParameter));
@@ -1023,8 +1021,8 @@ void printUsageAndExit()
 		"  -M | --mode MODE      rendering mode (0: reference image only, 1: features only, 2: reference image and features) \n"
 		"  -s | --scene SCENE    scene file for rendering \n"
 		"  -d | --hdr HDR        home directory for HDRIs \n"
-		"  -i | --in IN          base filename for input features (.dat) \n"
-		"  -o | --out OUT        base filename for output reference image (.png, .hdr) \n"
+		"  -i | --in IN          base filename for input features (.npy) \n"
+		"  -o | --out OUT        base filename for output reference image (.npy) \n"
 		"  -n | --num NUM        number of patches to generate \n"
 		"  -p | --spp SPP        sample per pixel \n"
 		"  -m | --mspp MSPP      maximum number of sample per pixel to render the reference image \n"
@@ -1296,7 +1294,7 @@ int main(int argc, char** argv)
 
 		GLFWwindow* window;
 		GLenum err;
-		if (visual || out_file.empty())
+		if (visual || (in_file.empty() && out_file.empty()))
 		{
 			window = glfwInitialize();
 			err = glewInit();
@@ -1369,7 +1367,7 @@ int main(int argc, char** argv)
 		if (!scene->properties.init_up)
 			scene->properties.camera_up = optix::make_float3(0.0f, 1.0f, 0.0f);
 		
-		if (visual || out_file.empty())
+		if (visual || (in_file.empty() && out_file.empty()))
 		{
 			std::cerr << "[Mode] visual";
 
@@ -1428,7 +1426,6 @@ int main(int argc, char** argv)
 						{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
 						"w");
 					rtBufferUnmap(buf);
-					delete data;
 
 					std::cerr << "[Output] (feat) " << in_file << "\n";
 
@@ -1454,7 +1451,6 @@ int main(int argc, char** argv)
 						{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
 						"w");
 					rtBufferUnmap(buf);
-					delete data;
 
 					std::cerr << "[Output] (ref) " << out_file << std::endl;
 				}
@@ -1527,7 +1523,6 @@ int main(int argc, char** argv)
 							{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
 							"w");
 						rtBufferUnmap(buf);
-						delete data;
 
 						std::cerr << "[Output] (feat) " << in_fn << "\n";
 
@@ -1555,7 +1550,6 @@ int main(int argc, char** argv)
 							{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
 							"w");
 						rtBufferUnmap(buf);
-						delete data;
 
 						std::cerr << "[Output] (ref) " << out_fn << std::endl;
 					}
