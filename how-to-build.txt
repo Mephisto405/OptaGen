@@ -1,4 +1,6 @@
 Test environment:
+* Anaconda 4.7.12
+* CUDA version 10.1
 * OptiX version 5.1.1
 * GPU, driver, and CUDA toolkit supported by OptiX, as specified in the OptiX Release Notes
 * Microsoft Visual Studio: VS 2013
@@ -6,20 +8,35 @@ Test environment:
 
 Instructions:
 
-1. Start up cmake-gui.
-2. Click "Browse Source..." and select the "src" directory from OptaGen as the source file location.
-    (E.g., C:/Users/<username>/OptaGen/src)
-3. Create a build directory manually via Windows File Explorer.
-    (E.g., C:/Users/<username>/OptaGen/build)
+1. Install CUDA 10.1 and verify the installation (check the official installation guide: https://duckduckgo.com/?t=ffab&q=install+cuda&atb=v211-2&ia=web).
+2. Install OptiX 5.1.1 and verify the installation by running "~/Optix SDK 5.1.1/SDK-precompiled-samples/optixDeviceQuery.exe"
 
-4. Press "Configure" button and select the version of Visual Studio you with to use. Select proper complier version also. Click "Finish". Then configuration process will start automatically.
+3. Temporarily change "OPTIX_add_sample_executable( OptaGen" to "OPTIX_add_sample_executable( optixPathTracer" in line 33 of "~/OptaGen/src/optixPathTracer/CMakeLists.txt"
+4. Start up cmake-gui.
+5. Click "Browse Source..." and select the "src" directory from OptaGen as the source file location.
+    (E.g., C:/Users/<username>/OptaGen/src)
+6. Create a build directory manually via Windows File Explorer.
+    (E.g., C:/Users/<username>/OptaGen/build)
+7. Press "Configure" button and select the version of Visual Studio to use (same version as the OptiX SDK). Select proper complier version also. Click "Finish". Then configuration process will start automatically.
     (E.g., Visual Studio 12 2013, x64)
-5. While configurating, you might face some interruption. In this case, 
+8. While configurating, you might face some interruption. In this case, 
     * Set OptiX_INSTALL_DIR to wherever you installed OptiX.
          (E.g., C:\ProgramData\NVIDIA Corporation\OptiX SDK <version>)
     * Press "Configure" again.
-6. Press "Generate".
+9. Press "Generate".
+10. Recover the change made at the step 0. (i.e., change "optixPathTracer" to "OptaGen"
 
-7. Open the OptaGen.sln solution file in the build directory you created in the step 3 on your Visual Studio.
-8. Press "F7" (or click "Build Solution" in the "Build" tap).
-9. If the Visual Studio ask you to reload your projects, please do so. Since some dependencies are automatically handled for CUDA compilation in VS, it will likely ask you to do this.
+11. Download the cnpy, generate .sln file via cmake-gui, and build ("F7" on the VS13) it.
+12. Link .h file.
+	12-1. Open CNPY.sln.
+	12-2. Solution Explorer -> cnpy -> right click -> properties -> Configuration Properties -> C/C++ -> General
+	12-3. Additional Include Directories 에 External Dependencies의 경로 적혀있음. ctrl + c
+	12-4. Open OptaGen.sln.
+	12-5. Solution Explorer -> OptaGen -> ... -> Additional Include Directories 에 cnpy.h, cnpy.cpp 두 파일이 저장되어있는 디렉토리와 함께 위 경로도 추가 (즉, 디렉토리 두 개를 추가해야 함)
+13. Linker에게 lib 정보 알려주기.
+	13-1. OptaGen -> properties -> Configuration Properties -> Linker -> General
+	13-2. cnpy 의 build 디렉토리를 Additional Library Directories 에 넣기
+	13-3. Linker -> Input 에서 Additional Dependencies 에 다음 추가; C:\Users\<user>\<cnpy_dir>\build\Release\cnpy.lib, C:\Users\<user>\Anaconda3\Library\lib\zlib.lib
+
+15. Press "F7" (or click "Build Solution" in the "Build" tap).
+16. If the Visual Studio ask you to reload your projects, please do so. Since some dependencies are automatically handled for CUDA compilation in VS, it will likely ask you to do this.
