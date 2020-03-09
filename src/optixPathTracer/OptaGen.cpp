@@ -75,7 +75,7 @@
 
 using namespace optix;
 
-const char* const SAMPLE_NAME = "optixPathTracer";
+const char* const SAMPLE_NAME = "OptaGen";
 std::string SAVE_DIR = "";
 
 const int NUMBER_OF_BRDF_INDICES = 4;
@@ -219,7 +219,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context["scene_epsilon"]->setFloat(1.e-3f);
 	context["mbpf_frames"]->setInt(num_frames);
 
-	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_FLOAT3,
+	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_FLOAT4,
 		scene->properties.width, scene->properties.height, use_pbo);
 	context["output_buffer"]->set(buffer);
 
@@ -1042,6 +1042,83 @@ void printUsageAndExit()
 }
 
 
+void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int num_of_frames)
+{
+	GLsizei width, height;
+	RTsize buffer_width, buffer_height;
+
+	float* data;
+	rtBufferMap(buffer->get(), (void**)&data);
+	
+	buffer->getSize(buffer_width, buffer_height);
+	width = static_cast<GLsizei>(buffer_width);
+	height = static_cast<GLsizei>(buffer_height);
+
+	if (ref)
+	{
+		assert(buffer->getElementSize() / sizeof(float) == 4);
+
+		std::vector<float> pix(width * height * 3);
+		// this buffer is upside down
+		for (int j = height - 1; j >= 0; --j)
+		{
+			float* dst = &pix[0] + (3 * width*(height - 1 - j));
+			float* src = data + 4 * width*j;
+			for (int i = 0; i < width; i++)
+			{
+				for (int elem = 0; elem < 3; ++elem)
+				{
+					*dst++ = *src++;
+				}
+
+				// skip alpha (padding)
+				src++;
+			}
+
+		}
+
+		cnpy::npy_save(
+			filename,
+			&pix[0],
+			{ buffer_width, buffer_height, 3 },
+			"w");
+	}
+	else
+	{
+		assert(buffer->getElementSize() / sizeof(float) == 4 * 54);
+
+		std::vector<float> pix(width * height * 4 * 54);
+		// this buffer is upside down
+		for (int j = height - 1; j >= 0; --j)
+		{
+			float* dst = &pix[0] + (4 * 54 * width*(height - 1 - j));
+			float* src = data + 4 * 54 * width*j;
+			for (int i = 0; i < width; i++)
+			{
+				for (int elem = 0; elem < 4 * 54; ++elem)
+				{
+					*dst++ = *src++;
+				}
+
+				// if spp % 4 == 0 ==> no need to pad
+			}
+		}
+
+		cnpy::npy_save(
+			filename,
+			&pix[0],
+			{ buffer_width, buffer_height, 
+			(size_t)num_of_frames, 
+			buffer->getElementSize() / sizeof(float) / num_of_frames },
+			"w");
+	}
+	
+	RT_CHECK_ERROR(rtBufferUnmap(buffer->get()));
+
+	std::cerr << "[Output] " << (ref ? "(ref) " : "(feat) ") << filename << std::endl;
+}
+
+
 int main(int argc, char** argv)
 {
 	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 1024, width = 0;
@@ -1416,6 +1493,7 @@ int main(int argc, char** argv)
 					}
 					std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "s\n";
 					
+					/*
 					RTbuffer buf = getMBFBuffer()->get();
 					float* data;
 					rtBufferMap(buf, (void**)&data);
@@ -1428,6 +1506,9 @@ int main(int argc, char** argv)
 					rtBufferUnmap(buf);
 
 					std::cerr << "[Output] (feat) " << in_file << "\n";
+					*/
+
+					writeBufferToNpy(in_file, getMBFBuffer(), false, num_of_frames);
 
 					startTime = sutil::currentTime();
 				}
@@ -1441,6 +1522,7 @@ int main(int argc, char** argv)
 					}
 					std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "s\n";
 
+					/*
 					RTbuffer buf = getOutputBuffer()->get();
 					float* data;
 					rtBufferMap(buf, (void**)&data);
@@ -1453,6 +1535,9 @@ int main(int argc, char** argv)
 					rtBufferUnmap(buf);
 
 					std::cerr << "[Output] (ref) " << out_file << std::endl;
+					*/
+					
+					writeBufferToNpy(out_file, getOutputBuffer(), true, num_of_frames);
 				}
 
 				destroyContext();
@@ -1513,6 +1598,7 @@ int main(int argc, char** argv)
 
 						in_fn = in_file.substr(0, in_file.find('.')) + "_" + std::to_string(r) + ".npy";
 
+						/*
 						RTbuffer buf = getMBFBuffer()->get();
 						float* data;
 						rtBufferMap(buf, (void**)&data);
@@ -1525,6 +1611,9 @@ int main(int argc, char** argv)
 						rtBufferUnmap(buf);
 
 						std::cerr << "[Output] (feat) " << in_fn << "\n";
+						*/
+
+						writeBufferToNpy(in_fn, getMBFBuffer(), false, num_of_frames);
 
 						startTime = sutil::currentTime();
 					}
@@ -1540,6 +1629,7 @@ int main(int argc, char** argv)
 
 						out_fn = out_file.substr(0, out_file.find('.')) + "_" + std::to_string(r) + ".npy";
 						
+						/*
 						RTbuffer buf = getOutputBuffer()->get();
 						float* data;
 						rtBufferMap(buf, (void**)&data);
@@ -1552,6 +1642,9 @@ int main(int argc, char** argv)
 						rtBufferUnmap(buf);
 
 						std::cerr << "[Output] (ref) " << out_fn << std::endl;
+						*/
+
+						writeBufferToNpy(out_fn, getOutputBuffer(), true, num_of_frames);
 					}
 				}
 
