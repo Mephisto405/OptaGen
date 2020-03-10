@@ -17,6 +17,8 @@ parser.add_argument('--num', type=int, required=False, default=258, help='total 
 parser.add_argument('--spp', type=int, required=False, default=4, help='sample per pixel.')
 parser.add_argument('--mspp', type=int, required=False, default=1024, help='maximum number of sample per pixel to render the reference image.')
 parser.add_argument('--roc', type=float, required=False, default=0.9, help='if the `rate of change` of relMSE is higher than this value, stop rendering the reference image.')
+parser.add_argument('--ckp_s', type=str, required=False, default="", help='start from this scene (e.g., bedroom).')
+parser.add_argument('--ckp_i', type=int, required=False, default=0, help='start from this index (e.g., bedroom_<ckp_i>.npy, bedroom_<ckp_i + 1>.npy, ...).')
 args = parser.parse_args()
 
 assert os.path.isfile(args.exe), 'EXE is not a valid executable file.'
@@ -35,7 +37,7 @@ assert args.num >= 10, 'NUM < 10.'
 assert args.spp >= 1 and args.spp <= 32, 'SPP < 1 or SPP > 32. CUDA memory error might occur.'
 assert args.mspp >= args.spp and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
 assert args.roc > 0.0 and args.roc < 1.0, 'ROC <= 0.0 or ROC >= 1.0.'
-#.\build\bin\Release\OptaGen.exe -m 0 -s C:\Users\Dorian\data_scenes\optagen\bathroom\scene.scene -d C:\Users\Dorian\data_scenes\optagen\HDRS -i C:\Users\Dorian\data_scenes\optagen\bathroom\scene.
+
 ##
 # Aux. Configurations
 scenes = []
@@ -44,6 +46,13 @@ for root, dirs, files in os.walk(args.root, topdown=True):
         if '.scene' in name:
             scenes.append(path.join(root, name))
 patches_per_scenes = (args.num + len(scenes) - 1) // len(scenes)
+if args.ckp_s != "":
+    idx = 0
+    for s in scenes:
+        if args.ckp_s in s:
+            idx = scenes.index(s)
+            break
+scenes = scenes[idx:]
 print('[] Number of scenes: {}'.format(len(scenes)))
 print('[] Patches per scene: {}'.format(patches_per_scenes))
 print('[] Expected number of patches to generate: {}'.format(patches_per_scenes * len(scenes)))
@@ -69,6 +78,7 @@ for scene in scenes:
             '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
             '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
             '-n', str(patches_per_scenes),
+            '-c', str(args.ckp_i),
             '-p', str(args.spp),
             '-m', str(args.mspp),
             '-r', str(args.roc),
