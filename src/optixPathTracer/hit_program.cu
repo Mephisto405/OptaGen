@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,11 @@
 
 using namespace optix;
 
-rtDeclareVariable( float3, shading_normal, attribute shading_normal, ); 
-rtDeclareVariable( float3, geometric_normal, attribute geometric_normal, );
-rtDeclareVariable( float3, front_hit_point, attribute front_hit_point, );
+rtDeclareVariable(float3, shading_normal, attribute shading_normal, );
+rtDeclareVariable(float3, geometric_normal, attribute geometric_normal, );
+rtDeclareVariable(float3, front_hit_point, attribute front_hit_point, );
 rtDeclareVariable(float3, back_hit_point, attribute back_hit_point, );
-rtDeclareVariable( float3, texcoord, attribute texcoord, );
+rtDeclareVariable(float3, texcoord, attribute texcoord, );
 
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(float, t_hit, rtIntersectionDistance, );
@@ -59,7 +59,7 @@ rtBuffer< rtCallableProgramId<float3(MaterialParameter &mat, State &state, PerRa
 rtBuffer< rtCallableProgramId<void(const LightParameter &light, const float3 &surfacePos, unsigned int &seed, LightSample &lightSample)> > sysLightSample;
 
 rtBuffer<MaterialParameter> sysMaterialParameters;
-rtDeclareVariable(int, materialId, , ); 
+rtDeclareVariable(int, materialId, , );
 rtDeclareVariable(int, sysNumberOfLights, , );
 
 rtBuffer<LightParameter> sysLightParameters;
@@ -99,36 +99,6 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 		}
 	}
 
-	/*
-	sysLightSample[light.lightType](light, prd, lightSample);
-
-	float3 lightDir = lightSample.surfacePos - surfacePos;
-	float lightDist = length(lightDir);
-	float lightDistSq = lightDist * lightDist;
-	lightDir /= sqrtf(lightDistSq);
-
-	if (dot(lightDir, surfaceNormal) <= 0.0f || dot(lightDir, lightSample.normal) >= 0.0f)
-		return L;
-
-	PerRayData_shadow prd_shadow;
-	prd_shadow.inShadow = false;
-	optix::Ray shadowRay = optix::make_Ray(surfacePos, lightDir, 1, scene_epsilon, lightDist - scene_epsilon);
-	rtTrace(top_object, shadowRay, prd_shadow);
-
-	if (!prd_shadow.inShadow)
-	{
-		float NdotL = dot(lightSample.normal, -lightDir);
-		float lightPdf = lightDistSq / (light.area * NdotL);
-
-		prd.bsdfDir = lightDir;
-
-		sysBRDFPdf[mat.brdf](mat, state, prd);
-		float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
-
-		L = powerHeuristic(lightPdf, prd.pdf) * prd.throughput * f * lightSample.emission / max(0.001f, lightPdf);
-	}
-	*/
-
 	return L;
 }
 
@@ -154,11 +124,10 @@ RT_PROGRAM void closest_hit()
 	state.ffnormal = ffnormal;
 	prd.wo = -ray.direction;
 
+	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
-	prd.albedo = mat.color;
-	prd.normal = ffnormal;
 
-	//TODO: Clean up handling of specular bounces
+	// TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
 
 	// Direct light Sampling
@@ -170,8 +139,12 @@ RT_PROGRAM void closest_hit()
 	sysBRDFPdf[mat.brdf](mat, state, prd);
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
 
+	// Path feature updating
+	prd.albedo = mat.color;
+	prd.normal = ffnormal;
+
 	if (prd.pdf > 0.0f)
-		prd.throughput *= f / prd.pdf; 
+		prd.throughput *= f / prd.pdf;
 	else
 		prd.done = true;
 }

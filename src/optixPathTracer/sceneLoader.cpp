@@ -9,11 +9,11 @@ including commercial applications, and to alter it and redistribute it
 freely, subject to the following restrictions:
 
 1. The origin of this software must not be misrepresented; you must not
-   claim that you wrote the original software. If you use this software
-   in a product, an acknowledgement in the product documentation would be
-   appreciated but is not required.
+claim that you wrote the original software. If you use this software
+in a product, an acknowledgement in the product documentation would be
+appreciated but is not required.
 2. Altered source versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
+misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.*/
 
 #include "sceneLoader.h"
@@ -105,17 +105,17 @@ Scene* LoadScene(const char* filename)
 				else if (strcmp(brdf_type, "ROUGHDIELECTRIC") == 0 || strcmp(brdf_type, "3") == 0)
 					material.brdf = ROUGHDIELECTRIC;
 
-				if (strcmp(dist_type, "Beckmann") == 0 || 
+				if (strcmp(dist_type, "Beckmann") == 0 ||
 					strcmp(dist_type, "beckmann") == 0 ||
 					strcmp(dist_type, "0") == 0)
 					material.dist = Beckmann;
 				else if (strcmp(dist_type, "GGX") == 0 ||
-						 strcmp(dist_type, "ggx") == 0 ||
-						 strcmp(dist_type, "1") == 0)
+					strcmp(dist_type, "ggx") == 0 ||
+					strcmp(dist_type, "1") == 0)
 					material.dist = GGX;
-				else if (strcmp(dist_type, "Phong") == 0 || 
-						 strcmp(dist_type, "phong") == 0 ||
-						 strcmp(dist_type, "2") == 0)
+				else if (strcmp(dist_type, "Phong") == 0 ||
+					strcmp(dist_type, "phong") == 0 ||
+					strcmp(dist_type, "2") == 0)
 					material.dist = Phong;
 
 			}
@@ -125,7 +125,7 @@ Scene* LoadScene(const char* filename)
 			{
 				material.albedoID = texture_ids[tex_name];
 			}
-			else if(strcmp(tex_name, "None") != 0)
+			else if (strcmp(tex_name, "None") != 0)
 			{
 				tex_id++;
 				texture_ids[tex_name] = tex_id;
@@ -196,27 +196,27 @@ Scene* LoadScene(const char* filename)
 
 				char envmap_fn[2048];
 
-				if ( sscanf(line, " width %i", &prop.width) != 0 )
+				if (sscanf(line, " width %i", &prop.width) != 0)
 					prop.width = (prop.width < MINW) ? MINW : ((prop.width > MAXW ? MAXW : prop.width));
-				if ( sscanf(line, " height %i", &prop.height) != 0 )
+				if (sscanf(line, " height %i", &prop.height) != 0)
 					prop.height = (prop.height < MINH) ? MINH : ((prop.height > MAXH ? MAXH : prop.height));
-				if ( sscanf(line, " fov %f", &prop.vfov) != 0 )
+				if (sscanf(line, " fov %f", &prop.vfov) != 0)
 					prop.vfov = (prop.vfov < MINFOV) ? MINFOV : prop.vfov;
-				if ( sscanf(line, " max_depth %u", &prop.max_depth) != 0 )
+				if (sscanf(line, " max_depth %u", &prop.max_depth) != 0)
 					prop.max_depth = (prop.max_depth < MINDEPTH) ? MINDEPTH : ((prop.max_depth > MAXDEPTH ? MAXDEPTH : prop.max_depth));
-				
+
 				if (sscanf(line, " position %f %f %f", &prop.camera_eye.x, &prop.camera_eye.y, &prop.camera_eye.z) != 0)
 					prop.init_eye = true;
-				if ( sscanf(line, " look_at %f %f %f", &prop.camera_lookat.x, &prop.camera_lookat.y, &prop.camera_lookat.z) != 0 ) 
+				if (sscanf(line, " look_at %f %f %f", &prop.camera_lookat.x, &prop.camera_lookat.y, &prop.camera_lookat.z) != 0)
 					prop.init_lookat = true;
-				if ( sscanf(line, " up %f %f %f", &prop.camera_up.x, &prop.camera_up.y, &prop.camera_up.z) != 0 )
+				if (sscanf(line, " up %f %f %f", &prop.camera_up.x, &prop.camera_up.y, &prop.camera_up.z) != 0)
 					prop.init_up = true;
 				if (sscanf(line, " envmap %s", envmap_fn) == 1) {
 					prop.envmap_fn = std::string(envmap_fn);
 				}
-				
+
 			}
-			
+
 			scene->properties = prop;
 		}
 
@@ -241,9 +241,9 @@ Scene* LoadScene(const char* filename)
 				/*
 				if (sscanf(line, " file %s", path) == 1)
 				{
-					const optix::Matrix4x4 xform = optix::Matrix4x4::identity();// optix::Matrix4x4::rotate(-M_PIf / 2.0f, optix::make_float3(0.0f, 1.0f, 0.0f)
-					scene->mesh_names.push_back(std::string(sutil::samplesDir()) + "/data/" + path);
-					scene->transforms.push_back(xform);
+				const optix::Matrix4x4 xform = optix::Matrix4x4::identity();// optix::Matrix4x4::rotate(-M_PIf / 2.0f, optix::make_float3(0.0f, 1.0f, 0.0f)
+				scene->mesh_names.push_back(std::string(sutil::samplesDir()) + "/data/" + path);
+				scene->transforms.push_back(xform);
 				}
 				*/
 
@@ -253,7 +253,7 @@ Scene* LoadScene(const char* filename)
 					scene->mesh_names.push_back(scene->dir + path);
 				}
 
-				if (sscanf(line, " transform %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f", 
+				if (sscanf(line, " transform %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
 					&data[0], &data[1], &data[2], &data[3],
 					&data[4], &data[5], &data[6], &data[7],
 					&data[8], &data[9], &data[10], &data[11],

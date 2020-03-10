@@ -944,7 +944,7 @@ bool Texture::createEnvironment(const Picture* picture)
 
   if (image == nullptr)
   {
-    std::cerr << "ERROR: getImage(0, 0) returned nullptr! Creating white dummy environment." << std::endl;
+    std::cerr << "ERROR: Environment picture getImage(0, 0) returned nullptr! Creating white dummy environment." << std::endl;
     createEnvironment();
     return false;
   }

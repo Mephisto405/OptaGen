@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,9 +38,9 @@
 
 using namespace optix;
 
-rtDeclareVariable( float3, shading_normal, attribute shading_normal, ); 
-rtDeclareVariable( float3, geometric_normal, attribute geometric_normal, );
-rtDeclareVariable( float3, front_hit_point, attribute front_hit_point, );
+rtDeclareVariable(float3, shading_normal, attribute shading_normal, );
+rtDeclareVariable(float3, geometric_normal, attribute geometric_normal, );
+rtDeclareVariable(float3, front_hit_point, attribute front_hit_point, );
 rtDeclareVariable(float3, back_hit_point, attribute back_hit_point, );
 
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
@@ -72,8 +72,8 @@ __device__ inline float3 LinearToSrgb(const float3& c)
 RT_PROGRAM void closest_hit()
 {
 	const float3 world_shading_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, shading_normal));
-	const float3 world_geometric_normal = normalize( rtTransformNormal( RT_OBJECT_TO_WORLD, geometric_normal ) );
-	const float3 ffnormal = faceforward( world_shading_normal, -ray.direction, world_geometric_normal );
+	const float3 world_geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, geometric_normal));
+	const float3 ffnormal = faceforward(world_shading_normal, -ray.direction, world_geometric_normal);
 
 	LightParameter light = sysLightParameters[lightMaterialId];
 	float cosTheta;
@@ -82,7 +82,7 @@ RT_PROGRAM void closest_hit()
 	else if (light.lightType == SPHERE)
 	{
 		const float3 lightNormal = normalize(front_hit_point - light.position);
-		const float cosTheta = dot(-ray.direction, lightNormal);
+		cosTheta = dot(-ray.direction, lightNormal);
 	}
 
 
@@ -91,14 +91,18 @@ RT_PROGRAM void closest_hit()
 		if (prd.depth == 0 || prd.specularBounce)
 		{
 			prd.radiance += light.emission * prd.throughput;
-			prd.albedo = light.emission * prd.throughput;//LinearToSrgb(ToneMap(light.emission * prd.throughput, 1.5));
+
+			// Path feature updating
+			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
 			prd.normal = ffnormal;
 		}
 		else
 		{
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
-			prd.albedo = LinearToSrgb(ToneMap(powerHeuristic(prd.pdf, lightPdf) * prd.throughput * light.emission, 1.5));
+			
+			// Path feature updating
+			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
 			prd.normal = ffnormal;
 		}
 	}

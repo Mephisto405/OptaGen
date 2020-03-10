@@ -31,7 +31,7 @@ include_directories(${IL_INCLUDE_DIR})
 
 # See top level CMakeLists.txt file for documentation of OPTIX_add_sample_executable.
 OPTIX_add_sample_executable( OptaGen
-    	OptaGen.cpp
+	OptaGen.cpp
 	sceneLoader.cpp
 	Picture.cpp
 	Texture.cpp
@@ -47,8 +47,8 @@ OPTIX_add_sample_executable( OptaGen
 	Picture.h
 	Texture.h
 	
-    	path_trace_camera.cu
-    	quad_intersect.cu
+	path_trace_camera.cu
+	quad_intersect.cu
 	disney.cu
 	roughdielectric.cu
 	lambert.cu
@@ -57,7 +57,7 @@ OPTIX_add_sample_executable( OptaGen
 	light_hit_program.cu
 	light_sample.cu
 	background.cu
-    	triangle_mesh.cu
+	triangle_mesh.cu
 	sphere_intersect.cu
 
     # common headers
