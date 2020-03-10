@@ -16,8 +16,6 @@ The code and document are not polished yet. I will continue to update the code t
 
 Please take a look at [how-to-build.txt](./how-to-build.txt).
 
-*I will write a more detailed step-by-step description soon.
-
 ## How-to-Run
 
 Please take a look at the main [data generator code](./scripts/optagen.py) and the [feature visualizer code](./scripts/vis_feat.py).
