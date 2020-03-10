@@ -75,7 +75,7 @@
 
 using namespace optix;
 
-const char* const SAMPLE_NAME = "optixPathTracer";
+const char* const SAMPLE_NAME = "OptaGen";
 std::string SAVE_DIR = "";
 
 const int NUMBER_OF_BRDF_INDICES = 4;
@@ -219,7 +219,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context["scene_epsilon"]->setFloat(1.e-3f);
 	context["mbpf_frames"]->setInt(num_frames);
 
-	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_FLOAT3,
+	Buffer buffer = sutil::createOutputBuffer(context, RT_FORMAT_FLOAT4,
 		scene->properties.width, scene->properties.height, use_pbo);
 	context["output_buffer"]->set(buffer);
 
@@ -1018,17 +1018,18 @@ void printUsageAndExit()
 		"\n"
 		"optional arguments:\n"
 		"  -h | --help           show this help message and exit \n"
-		"  -M | --mode MODE      rendering mode (0: reference image only, 1: features only, 2: reference image and features) \n"
-		"  -s | --scene SCENE    scene file for rendering \n"
-		"  -d | --hdr HDR        home directory for HDRIs \n"
+		"  -M | --mode MODE      rendering mode (default: 0, 0: reference image only, 1: features only, 2: reference image and features) \n"
+		"  -s | --scene SCENE    scene file for rendering (required) \n"
+		"  -d | --hdr HDR        home directory for HDRIs (optional) \n"
 		"  -i | --in IN          base filename for input features (.npy) \n"
 		"  -o | --out OUT        base filename for output reference image (.npy) \n"
-		"  -n | --num NUM        number of patches to generate \n"
-		"  -p | --spp SPP        sample per pixel \n"
-		"  -m | --mspp MSPP      maximum number of sample per pixel to render the reference image \n"
-		"  -r | --roc ROC        if the `rate of change` of relMSE is higher than this value, stop rendering the reference image \n"
-		"  -w | --width WIDTH    image width and height for training data processing \n"
-		"  -v | --visual VISUAL  visual mode (0: off, 1: on) \n"
+		"  -n | --num NUM        number of patches to generate (default: 1)\n"
+		"  -c | --ckp CKP        start from this index (e.g., bedroom_<ckp_i>.npy, bedroom_<ckp_i + 1>.npy, ...) (default: 0) \n"
+		"  -p | --spp SPP        sample per pixel (default: 4) \n"
+		"  -m | --mspp MSPP      maximum number of sample per pixel to render the reference image (default: 64) \n"
+		"  -r | --roc ROC        if the `rate of change` of relMSE is higher than this value, stop rendering the reference image (default: 0.9) \n"
+		"  -w | --width WIDTH    image width and height for training data processing (optional) \n"
+		"  -v | --visual VISUAL  visual mode (default: 0, 0: off, 1: on) \n"
 		"\n"
 		"app keystrokes:\n"
 		"  q  Quit\n"
@@ -1042,9 +1043,86 @@ void printUsageAndExit()
 }
 
 
+void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int num_of_frames)
+{
+	GLsizei width, height;
+	RTsize buffer_width, buffer_height;
+
+	float* data;
+	rtBufferMap(buffer->get(), (void**)&data);
+	
+	buffer->getSize(buffer_width, buffer_height);
+	width = static_cast<GLsizei>(buffer_width);
+	height = static_cast<GLsizei>(buffer_height);
+
+	if (ref)
+	{
+		assert(buffer->getElementSize() / sizeof(float) == 4);
+
+		std::vector<float> pix(width * height * 3);
+		// this buffer is upside down
+		for (int j = height - 1; j >= 0; --j)
+		{
+			float* dst = &pix[0] + (3 * width*(height - 1 - j));
+			float* src = data + 4 * width*j;
+			for (int i = 0; i < width; i++)
+			{
+				for (int elem = 0; elem < 3; ++elem)
+				{
+					*dst++ = *src++;
+				}
+
+				// skip alpha (padding)
+				src++;
+			}
+
+		}
+
+		cnpy::npy_save(
+			filename,
+			&pix[0],
+			{ buffer_width, buffer_height, 3 },
+			"w");
+	}
+	else
+	{
+		assert(buffer->getElementSize() / sizeof(float) == 4 * 54);
+
+		std::vector<float> pix(width * height * 4 * 54);
+		// this buffer is upside down
+		for (int j = height - 1; j >= 0; --j)
+		{
+			float* dst = &pix[0] + (4 * 54 * width*(height - 1 - j));
+			float* src = data + 4 * 54 * width*j;
+			for (int i = 0; i < width; i++)
+			{
+				for (int elem = 0; elem < 4 * 54; ++elem)
+				{
+					*dst++ = *src++;
+				}
+
+				// if spp % 4 == 0 ==> no need to pad
+			}
+		}
+
+		cnpy::npy_save(
+			filename,
+			&pix[0],
+			{ buffer_width, buffer_height, 
+			(size_t)num_of_frames, 
+			buffer->getElementSize() / sizeof(float) / num_of_frames },
+			"w");
+	}
+	
+	RT_CHECK_ERROR(rtBufferUnmap(buffer->get()));
+
+	std::cerr << "[Output] " << (ref ? "(ref) " : "(feat) ") << filename << std::endl;
+}
+
+
 int main(int argc, char** argv)
 {
-	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 1024, width = 0;
+	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 64, width = 0, ckp = 0;
 	float rate_of_change = 0.9;
 	std::string scene_file = "", hdrs_home = "", in_file = "", out_file = "";
 	bool visual = false;
@@ -1053,7 +1131,7 @@ int main(int argc, char** argv)
 	std::vector<std::string> opts = {
 		"-h", "--help", "-M", "--mode", "-s", "--scene",
 		"-d", "--hdr", "-i", "--in", "-o", "--out", 
-		"-n", "--num", "-p", "--spp", "-m", "--mspp", 
+		"-n", "--num", "-c", "--ckp", "-p", "--spp", "-m", "--mspp", 
 		"-r", "--roc", "-w", "--width", "-v", "--visual"
 	};
 
@@ -1144,6 +1222,28 @@ int main(int argc, char** argv)
 			catch (std::exception const &e)
 			{
 				std::cerr << "Option '" << arg << "' should be a positive integer value.\n";
+				printUsageAndExit();
+			}
+		}
+		else if (arg == "-c" || arg == "--ckp")
+		{
+			if (i == argc - 1 || (std::find(opts.begin(), opts.end(), argv[i + 1]) != opts.end()))
+			{
+				std::cerr << "Option '" << arg << "' requires additional argument.\n";
+				printUsageAndExit();
+			}
+
+			try
+			{
+				ckp = std::stoi(argv[++i]);
+				if (ckp < 0)
+				{
+					throw std::exception();
+				}
+			}
+			catch (std::exception const &e)
+			{
+				std::cerr << "Option '" << arg << "' should be a non-negative integer value.\n";
 				printUsageAndExit();
 			}
 		}
@@ -1415,19 +1515,8 @@ int main(int argc, char** argv)
 						context->launch(0, scene->properties.width, scene->properties.height);
 					}
 					std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "s\n";
-					
-					RTbuffer buf = getMBFBuffer()->get();
-					float* data;
-					rtBufferMap(buf, (void**)&data);
-					RTsize width, height;
-					getMBFBuffer()->getSize(width, height);
-					cnpy::npy_save(in_file,
-						(float *)data,
-						{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
-						"w");
-					rtBufferUnmap(buf);
 
-					std::cerr << "[Output] (feat) " << in_file << "\n";
+					writeBufferToNpy(in_file, getMBFBuffer(), false, num_of_frames);
 
 					startTime = sutil::currentTime();
 				}
@@ -1440,19 +1529,8 @@ int main(int argc, char** argv)
 						context->launch(0, scene->properties.width, scene->properties.height);
 					}
 					std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "s\n";
-
-					RTbuffer buf = getOutputBuffer()->get();
-					float* data;
-					rtBufferMap(buf, (void**)&data);
-					RTsize width, height;
-					getOutputBuffer()->getSize(width, height);
-					cnpy::npy_save(out_file,
-						(float *)data,
-						{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
-						"w");
-					rtBufferUnmap(buf);
-
-					std::cerr << "[Output] (ref) " << out_file << std::endl;
+					
+					writeBufferToNpy(out_file, getOutputBuffer(), true, num_of_frames);
 				}
 
 				destroyContext();
@@ -1472,25 +1550,30 @@ int main(int argc, char** argv)
 				srand(static_cast <unsigned> (time(0)));
 
 				struct dirent* entry;
-				DIR* dir = opendir(hdrs_home.c_str());
-				if (dir == NULL)
-				{
-					std::cerr << "HDRS directory not specified! " << std::endl;
-					exit(EXIT_FAILURE);
-				}
+				DIR* dir;
 				std::vector<std::string> entries;
-				while ((entry = readdir(dir)) != NULL)
+				
+				if (hdrs_home != "")
 				{
-					if (ends_with(entry->d_name, ".hdr"))
-						entries.push_back(std::string(entry->d_name));
+					dir = opendir(hdrs_home.c_str());
+					if (dir == NULL)
+					{
+						std::cerr << "HDRS directory not specified! " << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					while ((entry = readdir(dir)) != NULL)
+					{
+						if (ends_with(entry->d_name, ".hdr"))
+							entries.push_back(std::string(entry->d_name));
+					}
 				}
 
-				for (int r = 0; r < num_of_patches; r++)
+				for (int r = ckp; r < ckp + num_of_patches; r++)
 				{
 					sutil::Camera camera = setRandomCameraParams(aabb, aabb_txt_fn);
 					setRandomMaterials();
-					//if (r % 100 == 0)
-					//	setRandomBackground(hdrs_home, entries);
+					if (hdrs_home != "" && r % 10 == 0)
+						setRandomBackground(hdrs_home, entries);
 
 					if (mode == M_REF)
 						std::cerr << "[Frames] " << max_ref_frames << "\n";
@@ -1512,19 +1595,7 @@ int main(int argc, char** argv)
 						std::cerr << "[Elapsed time] (feat) " << sutil::currentTime() - startTime << "\n";
 
 						in_fn = in_file.substr(0, in_file.find('.')) + "_" + std::to_string(r) + ".npy";
-
-						RTbuffer buf = getMBFBuffer()->get();
-						float* data;
-						rtBufferMap(buf, (void**)&data);
-						RTsize width, height;
-						getMBFBuffer()->getSize(width, height);
-						cnpy::npy_save(in_fn,
-							(float *)data,
-							{ width, height, (size_t)num_of_frames, getMBFBuffer()->getElementSize() / sizeof(float) / num_of_frames },
-							"w");
-						rtBufferUnmap(buf);
-
-						std::cerr << "[Output] (feat) " << in_fn << "\n";
+						writeBufferToNpy(in_fn, getMBFBuffer(), false, num_of_frames);
 
 						startTime = sutil::currentTime();
 					}
@@ -1539,19 +1610,7 @@ int main(int argc, char** argv)
 						std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "\n";
 
 						out_fn = out_file.substr(0, out_file.find('.')) + "_" + std::to_string(r) + ".npy";
-						
-						RTbuffer buf = getOutputBuffer()->get();
-						float* data;
-						rtBufferMap(buf, (void**)&data);
-						RTsize width, height;
-						getOutputBuffer()->getSize(width, height);
-						cnpy::npy_save(out_fn,
-							(float *)data,
-							{ width, height, getOutputBuffer()->getElementSize() / sizeof(float) },
-							"w");
-						rtBufferUnmap(buf);
-
-						std::cerr << "[Output] (ref) " << out_fn << std::endl;
+						writeBufferToNpy(out_fn, getOutputBuffer(), true, num_of_frames);
 					}
 				}
 

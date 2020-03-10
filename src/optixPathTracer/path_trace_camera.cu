@@ -47,7 +47,7 @@ rtDeclareVariable(float3,        bad_color, , );
 rtDeclareVariable(float,         scene_epsilon, , );
 rtDeclareVariable(float3,        cutoff_color, , );
 rtDeclareVariable(int,           max_depth, , );
-rtBuffer<float3, 2>              output_buffer;
+rtBuffer<float4, 2>              output_buffer;
 rtBuffer<pathFeatures6[4], 2>    mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
@@ -175,7 +175,7 @@ RT_PROGRAM void pinhole_camera()
 		acc_val = make_float4(result, 0.f);
 	}
 
-	output_buffer[launch_index] = make_float3(acc_val); // uint
+	output_buffer[launch_index] = acc_val; // uint
 	accum_buffer[launch_index] = acc_val;
 	if (frame < mbpf_frames)
 		mbpf_buffer[launch_index][frame] = pf6;
@@ -185,5 +185,5 @@ RT_PROGRAM void exception()
 {
 	const unsigned int code = rtGetExceptionCode();
 	rtPrintf( "Caught exception 0x%X at launch index (%d,%d)\n", code, launch_index.x, launch_index.y );
-	output_buffer[launch_index] = bad_color;
+	output_buffer[launch_index] = make_float4(bad_color);
 }

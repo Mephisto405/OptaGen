@@ -22,7 +22,7 @@ args = parser.parse_args()
 
 filename = args.npy
 arr = np.load(filename)
-arr = np.flip(arr, 0)
+#arr = np.flip(arr, 0)
 
 if len(arr.shape) == 4:
     rad = [arr[:,:,:,0:3], arr[:,:,:,3:6], arr[:,:,:,6:9], arr[:,:,:,9:12], arr[:,:,:,12:15], arr[:,:,:,15:18]]
