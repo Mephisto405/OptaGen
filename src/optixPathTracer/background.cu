@@ -35,6 +35,8 @@
 
 using namespace optix;
 
+rtDeclareVariable(int, sysNumberOfLights, , );
+
 rtDeclareVariable(float3, background_light, , ); // horizon color
 rtDeclareVariable(float3, background_dark, , );  // zenith color
 rtDeclareVariable(float3, up, , );               // global up vector
@@ -73,7 +75,8 @@ RT_PROGRAM void miss()
 	}
 	else
 	{
-		const LightParameter light = sysLightParameters[0];
+		const LightParameter light = sysLightParameters[sysNumberOfLights - 1];
+		assert(light.lightType == ENVMAP);
 
 		float3 dir = normalize(ray.direction); // might be unnecessary
 		float theta = acosf(-dir.y); // theta == 0.0f is south pole, theta == M_PIf is north pole
