@@ -1,6 +1,9 @@
 import argparse
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+mpl.rcParams['figure.dpi'] = 300
 
 def ToneMap(c, limit):
     # c: (W, H, C=3)

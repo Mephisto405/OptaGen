@@ -52,7 +52,7 @@ if args.ckp_s != "":
         if args.ckp_s in s:
             idx = scenes.index(s)
             break
-scenes = scenes[idx:]
+    scenes = scenes[idx:]
 print('[] Number of scenes: {}'.format(len(scenes)))
 print('[] Patches per scene: {}'.format(patches_per_scenes))
 print('[] Expected number of patches to generate: {}'.format(patches_per_scenes * len(scenes)))

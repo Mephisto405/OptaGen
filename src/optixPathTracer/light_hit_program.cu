@@ -106,6 +106,12 @@ RT_PROGRAM void closest_hit()
 			prd.normal = ffnormal;
 		}
 	}
+	else
+	{
+		// backside of the light
+		prd.albedo = make_float3(0.0f);
+		prd.normal = ffnormal;
+	}
 
 	prd.done = true;
 }
