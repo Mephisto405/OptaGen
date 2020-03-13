@@ -405,14 +405,13 @@ void updateLightParameters(std::vector<LightParameter> &lightParameters)
 		RTsize u1, u2, v;
 		m_environmentTexture.getBufferCDF_U()->getSize(u1, u2);
 		m_environmentTexture.getBufferCDF_V()->getSize(v);
-		std::cerr << "Envmap size: " << u1 << " " << v << std::endl;
+		std::cerr << "Envmap size: (" << u1 << ", " << v << ")" << std::endl;
 
 		lightParameters.push_back(light);
 
 		m_bufferLightParameters = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_USER);
 		m_bufferLightParameters->setElementSize(sizeof(LightParameter));
 		m_bufferLightParameters->setSize(lightParameters.size()); // Update the buffer size
-		std::cerr << "size " << lightParameters.size() << std::endl;
 	}
 
 	LightParameter* dst = static_cast<LightParameter*>(m_bufferLightParameters->map(0, RT_BUFFER_MAP_WRITE_DISCARD));
@@ -426,7 +425,6 @@ void updateLightParameters(std::vector<LightParameter> &lightParameters)
 		dst->v = mat.v;
 		dst->normal = mat.normal;
 		dst->lightType = mat.lightType;
-		std::cerr << "type " << mat.lightType << std::endl;
 
 		dst->idEnvironmentTexture = mat.idEnvironmentTexture;
 		dst->idEnvironmentCDF_U = mat.idEnvironmentCDF_U;
@@ -699,7 +697,6 @@ void setRandomBackground(const std::string base_hdrs, const std::vector<std::str
 	updateLightParameters(scene->lights);
 	context["sysLightParameters"]->setBuffer(m_bufferLightParameters);
 	context["sysNumberOfLights"]->setInt(scene->lights.size());
-	std::cerr << "rnd size " << scene->lights.size() << std::endl;
 }
 
 
@@ -1578,12 +1575,7 @@ int main(int argc, char** argv)
 
 				for (int r = ckp; r < ckp + num_of_patches; r++)
 				{
-					//sutil::Camera camera = setRandomCameraParams(aabb, aabb_txt_fn);
-					sutil::Camera camera(
-						scene->properties.width, scene->properties.height, scene->properties.vfov,
-						&scene->properties.camera_eye.x, &scene->properties.camera_lookat.x, &scene->properties.camera_up.x,
-						context["eye"], context["U"], context["V"], context["W"]
-						);
+					sutil::Camera camera = setRandomCameraParams(aabb, aabb_txt_fn);
 					setRandomMaterials();
 					if (hdrs_home != "")
 						setRandomBackground(hdrs_home, entries);

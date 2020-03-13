@@ -68,7 +68,10 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 ##
 # Rendering
 print('[] Rendering start...')
+SCENES = ['material-testball', 'spaceship', 'staircase', 'staircase-2'] #'coffee', 'lamp', 'living-room', 'living-room-2', 'living-room-3',
 for scene in scenes:
+    if scene.split("\\")[-2] not in SCENES:
+        continue
     print(scene)
     cmd = [
             args.exe,
@@ -92,37 +95,5 @@ for scene in scenes:
         print(exc.output)
     else:
         continue
-    """
-    try:
-        arr = np.load(path.join(input_dir, scene.split('\\')[-2] + '.npy'))
-        if arr.shape != (1280, 1280, 4, 54):
-            raise ValueError()
-    except (ValueError, FileNotFoundError):
-        print(scene)
-
-        cmd = [
-            args.exe,
-            '-M', str(args.mode),
-            '-s', scene,
-            '-d', args.hdr,
-            '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
-            '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
-            '-n', str(patches_per_scenes),
-            '-p', str(args.spp),
-            '-m', str(args.mspp),
-            '-r', str(args.roc),
-            '-w', "1280",
-            '-v', "0"
-        ]
-
-        try:
-            cmd_out = check_output(cmd, stderr=STDOUT)
-        except CalledProcessError as exc:
-            print(exc.output)
-        else:
-            assert 0
-    else:
-        continue
-    """
 
 print("[] Processing done.")
