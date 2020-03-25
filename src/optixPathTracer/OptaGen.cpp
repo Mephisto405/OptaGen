@@ -216,6 +216,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context["max_depth"]->setInt(max_depth);
 	context["cutoff_color"]->setFloat(0.0f, 0.0f, 0.0f);
 	context["frame"]->setUint(0u);
+	context["curr_time"]->setUint(static_cast <unsigned int> (time(0)));
 	context["scene_epsilon"]->setFloat(1.e-3f);
 	context["mbpf_frames"]->setInt(num_frames);
 

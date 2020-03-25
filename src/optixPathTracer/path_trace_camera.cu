@@ -52,6 +52,7 @@ rtBuffer<pathFeatures6[4], 2>    mbpf_buffer; /* Multiple-bounced feature buffer
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject,      top_object, , );
 rtDeclareVariable(unsigned int,  frame, , );
+rtDeclareVariable(unsigned int,  curr_time, , );
 rtDeclareVariable(int,			 mbpf_frames, , );
 rtDeclareVariable(uint2,         launch_index, rtLaunchIndex, );
 
@@ -96,7 +97,7 @@ __device__ inline float3 clip(const float3& c)
 RT_PROGRAM void pinhole_camera()
 {
 	size_t2 screen = output_buffer.size();
-	unsigned int seed = tea<16>(screen.x*launch_index.y+launch_index.x, frame);
+	unsigned int seed = tea<16>(screen.x*launch_index.y + launch_index.x, frame + curr_time);
 
 	// Subpixel jitter: send the ray through a different position inside the pixel each time,
 	// to provide antialiasing.
