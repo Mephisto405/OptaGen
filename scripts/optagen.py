@@ -68,11 +68,14 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 ##
 # Rendering
 print('[] Rendering start...')
-SCENES = ['material-testball', 'spaceship', 'staircase', 'staircase-2'] #'coffee', 'lamp', 'living-room', 'living-room-2', 'living-room-3',
+SCENES = ['coffee', 'living-room-2', 'living-room-3', 'staircase']
+NUMS = [5, 10, 15, 15]
+i = 0
 for scene in scenes:
     if scene.split("\\")[-2] not in SCENES:
         continue
     print(scene)
+    print("num: %d" % (NUMS[i]))
     cmd = [
             args.exe,
             '-M', str(args.mode),
@@ -80,7 +83,7 @@ for scene in scenes:
             '-d', args.hdr,
             '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
             '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
-            '-n', str(patches_per_scenes),
+            '-n', str(NUMS[i]), #str(patches_per_scenes),
             '-c', str(args.ckp_i),
             '-p', str(args.spp),
             '-m', str(args.mspp),
@@ -88,6 +91,8 @@ for scene in scenes:
             '-w', "1280",
             '-v', "0"
         ]
+    
+    i += 1
 
     try:
         cmd_out = check_output(cmd, stderr=STDOUT)
