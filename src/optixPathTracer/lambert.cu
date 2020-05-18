@@ -55,6 +55,10 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 	onb.inverse_transform(dir);
 	
 	prd.bsdfDir = dir;
+
+	// update path feature
+	prd.roughness = 1.0f;
+	prd.tag = DIFF;
 }
 
 
@@ -70,5 +74,8 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 
 	float3 out = (1.0f / M_PIf) * mat.color;
 
-	return out * clamp(dot(N, L), 0.0f, 1.0f);
+	// update path feature
+	prd.thpt_at_vtx = out * clamp(dot(N, L), 0.0f, 1.0f);
+
+	return prd.thpt_at_vtx;
 }

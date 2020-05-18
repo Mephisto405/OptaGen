@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-mpl.rcParams['figure.dpi'] = 300
+#mpl.rcParams['figure.dpi'] = 250
 
 def ToneMap(c, limit):
     # c: (W, H, C=3)
@@ -25,9 +25,47 @@ args = parser.parse_args()
 
 filename = args.npy
 arr = np.load(filename)
-#arr = np.flip(arr, 0)
 
-if len(arr.shape) == 4:
+if len(arr.shape) == 4 and arr.shape[3] == 32:
+    print("PathFeature")
+    throughput = arr[:,:,:,:18]
+    tag = arr[:,:,:,18:24]
+    roughness = arr[:,:,:,24:30]
+    #throughput = np.log10(throughput+1)
+    im = np.mean(throughput[:,:,:,0:3], 2)
+    print(np.max(im))
+    im[im <= 500.0] = 0.0
+    im[im > 500.0] = 1.0
+    #plt.imshow(im)
+    #plt.show()
+    roughness /= np.max(roughness)
+
+    for i in range(1,7,1):
+        plt.subplot(3,6,i)
+        if (i == 1):
+            plt.title('Throughput')
+        thpt = np.mean(throughput[:,:,:,3*(i-1):3*i], 2)
+        print(np.max(thpt))
+        #thpt[thpt <= 500] = 0.0
+        #thpt[thpt > 500] = 1.0
+        plt.imshow(thpt)
+
+    for i in range(7,13,1):
+        plt.subplot(3,6,i)
+        if (i == 7):
+            plt.title('Tag (Diff,Glos,Spec,Relf,Tran)')
+        plt.imshow(np.mean(tag[:,:,:,(i-7)], 2), cmap='magma')
+    
+    for i in range(13,19,1):
+        plt.subplot(3,6,i)
+        if (i == 13):
+            plt.title('Roughness')
+        plt.imshow(np.mean(roughness[:,:,:,(i-13)], 2), cmap='magma')
+
+    plt.show()
+
+elif len(arr.shape) == 4 and arr.shape[3] == 54:
+    print("pathFeature6")
     rad = [arr[:,:,:,0:3], arr[:,:,:,3:6], arr[:,:,:,6:9], arr[:,:,:,9:12], arr[:,:,:,12:15], arr[:,:,:,15:18]]
     alb = [arr[:,:,:,18:21], arr[:,:,:,21:24], arr[:,:,:,24:27], arr[:,:,:,27:30], arr[:,:,:,30:33], arr[:,:,:,33:36]]
     nor = [arr[:,:,:,36:39], arr[:,:,:,39:42], arr[:,:,:,42:45], arr[:,:,:,45:48], arr[:,:,:,48:51], arr[:,:,:,51:54]]
@@ -74,4 +112,5 @@ if len(arr.shape) == 4:
     plt.show()
 elif len(arr.shape) == 3:
     plt.imshow(LinearToSrgb(ToneMap(arr, 1.5))); plt.show()
+    #plt.imsave("D:\\p-buffer\\train\\gt\\cornell-box.png", LinearToSrgb(ToneMap(arr, 1.5)))
     

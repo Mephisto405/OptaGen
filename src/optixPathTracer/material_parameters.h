@@ -22,7 +22,7 @@ struct MaterialParameter
 		color = optix::make_float3(1.0f, 1.0f, 1.0f);
 		emission = optix::make_float3(0.0f);
 		// params of the Disney's brdf
-		metallic = 0.0;
+		metallic = 0.0f;
 		subsurface = 0.0f;
 		specular = 0.5f;
 		roughness = 0.5f;

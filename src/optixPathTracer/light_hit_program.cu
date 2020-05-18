@@ -91,26 +91,12 @@ RT_PROGRAM void closest_hit()
 		if (prd.depth == 0 || prd.specularBounce)
 		{
 			prd.radiance += light.emission * prd.throughput;
-
-			// Path feature updating
-			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
-			prd.normal = ffnormal;
 		}
 		else
 		{
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
-			
-			// Path feature updating
-			prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
-			prd.normal = ffnormal;
 		}
-	}
-	else
-	{
-		// backside of the light
-		prd.albedo = make_float3(0.0f);
-		prd.normal = ffnormal;
 	}
 
 	prd.done = true;

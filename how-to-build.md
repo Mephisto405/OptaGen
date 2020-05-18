@@ -43,7 +43,7 @@
 	12-6. Add the cnpy repository directory (e.g., C:\Users\username\cnpy) and the directory copied at step 12-3 on Additional Include Directories
 14. Let the linker know the library path.
 	13-1. OptaGen -> properties -> Configuration Properties -> Linker -> General
-	13-2. Add the build directory (e.g., C:\Users\username\cnpy\build) of cnpy on Additional Include Directories.
+	13-2. Add the build directory (e.g., C:\Users\username\cnpy\build) of cnpy on Additional Library Directories.
 	13-3. Linker -> Input
 	13-4. Add two other directories on Additional Dependencies; C:\Users\user\cnpy\build\Release\cnpy.lib, C:\Users\user\Anaconda3\Library\lib\zlib.lib.
 

@@ -29,6 +29,7 @@
 #pragma once
 
 #include <optixu/optixu_vector_types.h>
+#include "path.h"
 
 struct PerRayData_radiance
 {
@@ -40,13 +41,16 @@ struct PerRayData_radiance
   bool inShadow;
   bool specularBounce;
   optix::float3 radiance;
-  optix::float3 normal; // normalized shading normal
-  optix::float3 albedo; // albedo
   optix::float3 origin;
   optix::float3 bsdfDir;
   optix::float3 wo;
   optix::float3 throughput;
   float pdf;
+
+  // per-vertex cache for PathFeature
+  optix::float3 thpt_at_vtx;
+  InteractionType tag;
+  float roughness;
 };
 
 struct PerRayData_shadow

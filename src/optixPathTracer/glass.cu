@@ -98,12 +98,20 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 		// Reflect
 		prd.origin = state.fhp;
 		prd.bsdfDir =  optix::reflect( -w_out, normal );
+
+		// update path feature
+		prd.roughness = 0.0f;
+		prd.tag = REFL;
 	}
 	else
 	{
 		// Refract
 		prd.origin = state.bhp;
 		prd.bsdfDir = w_t;
+
+		// update path feature
+		prd.roughness = 0.0f;
+		prd.tag = TRAN;
 	}
 }
 
@@ -120,11 +128,17 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 
 	if (iDotN * dot(o, N) > 0) // reflection
 	{
-		return make_float3(1.0f);
+		// update path feature
+		prd.thpt_at_vtx = make_float3(1.0f);
+
+		return prd.thpt_at_vtx;
 	}
 	else
 	{
-		return mat.color;
+		// update path feature
+		prd.thpt_at_vtx = mat.color;
+
+		return prd.thpt_at_vtx;
 	}
 }
 

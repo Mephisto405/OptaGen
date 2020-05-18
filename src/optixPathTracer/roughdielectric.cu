@@ -212,6 +212,10 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 		prd.origin = state.fhp;
 		prd.bsdfDir = 2.0f * VDotM * m - V;
 
+		// update path feature
+		prd.roughness = alphaConversion(mat.roughness, mat.dist);
+		prd.tag = REFL;
+
 		/* Sanity check */
 		if (dot(V, N) * dot(prd.bsdfDir, N) <= 0.0f) // should be reflected, but it wasn't
 			prd.done = true;
@@ -220,6 +224,10 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 	{
 		prd.origin = state.bhp;
 		prd.bsdfDir = (invEta * VDotM - sgn(VDotM) * cosThetaT) * m - invEta * V;
+
+		// update path feature
+		prd.roughness = alphaConversion(mat.roughness, mat.dist);
+		prd.tag = TRAN;
 
 		/* Sanity check */
 		if (dot(V, N) * dot(prd.bsdfDir, N) >= 0.0f) // should be refracted, but it wasn't
@@ -323,7 +331,11 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 
 		/* BSDF*cosine evaluating */
 		const float f = abs(F * Geo * microPdf / (4 * iDotN));
-		return make_float3(f);
+
+		// update path feature
+		prd.thpt_at_vtx = make_float3(f);
+
+		return prd.thpt_at_vtx;
 	}
 	else // refraction
 	{
@@ -347,6 +359,10 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 		const float oDotm = dot(o, m);
 		const float divisor = iDotm / eta + oDotm;
 		const float f = abs((1 - F) * Geo * microPdf * iDotm * oDotm / (divisor * divisor) / iDotN);
-		return mat.color * make_float3(f);
+
+		// update path feature
+		prd.thpt_at_vtx = mat.color * make_float3(f);
+
+		return prd.thpt_at_vtx;
 	}
 }

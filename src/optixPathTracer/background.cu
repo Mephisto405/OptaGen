@@ -67,10 +67,6 @@ RT_PROGRAM void miss()
 {
 	if (option == 0)
 	{
-		// Path feature updating
-		prd.albedo = make_float3(0.f);
-		prd.normal = make_float3(0.f);
-
 		prd.done = true;
 	}
 	else
@@ -95,10 +91,6 @@ RT_PROGRAM void miss()
 		}
 
 		prd.radiance += misWeight * emission * prd.throughput;
-
-		// Path feature updating
-		prd.albedo = LinearToSrgb(ToneMap(emission, 1.5));
-		prd.normal = make_float3(0.f);
 
 		prd.done = true;
 	}

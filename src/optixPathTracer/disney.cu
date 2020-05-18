@@ -13,7 +13,7 @@
 
  You may obtain a copy of the License at
  http://www.apache.org/licenses/LICENSE-2.0
-*/
+ */
 
 #include <optix.h>
 #include <optixu/optixu_math_namespace.h>
@@ -31,37 +31,40 @@ RT_FUNCTION float sqr(float x) { return x*x; }
 
 RT_FUNCTION float SchlickFresnel(float u)
 {
-    float m = clamp(1.0f-u, 0.0f, 1.0f);
-    float m2 = m*m;
-    return m2*m2*m; // pow(m,5)
+	float m = clamp(1.0f - u, 0.0f, 1.0f);
+	float m2 = m*m;
+	return m2*m2*m; // pow(m,5)
 }
 
+/* clearcoat lobe */
 RT_FUNCTION float GTR1(float NDotH, float a)
 {
-    if (a >= 1.0f) return (1.0f/ M_PIf);
-    float a2 = a*a;
-    float t = 1.0f + (a2-1.0f)*NDotH*NDotH;
-    return (a2-1.0f) / (M_PIf*logf(a2)*t);
+	if (a >= 1.0f) return (1.0f / M_PIf);
+	float a2 = a*a;
+	float t = 1.0f + (a2 - 1.0f)*NDotH*NDotH;
+	return (a2 - 1.0f) / (M_PIf*logf(a2)*t);
 }
 
+/* specular lobe */
 RT_FUNCTION float GTR2(float NDotH, float a)
 {
-    float a2 = a*a;
-    float t = 1.0f + (a2-1.0f)*NDotH*NDotH;
-    return a2 / (M_PIf * t*t);
+	float a2 = a*a;
+	float t = 1.0f + (a2 - 1.0f)*NDotH*NDotH;
+	return a2 / (M_PIf * t*t);
 }
 
 RT_FUNCTION float smithG_GGX(float NDotv, float alphaG)
 {
-    float a = alphaG*alphaG;
-    float b = NDotv*NDotv;
-    return 1.0f/(NDotv + sqrtf(a + b - a*b));
+	float a = alphaG*alphaG;
+	float b = NDotv*NDotv;
+	return 1.0f / (NDotv + sqrtf(a + b - a*b));
 }
 
 
 /*
-	http://simon-kallweit.me/rendercompo2015/
-*/
+	https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
+	http://simon-kallweit.me/rendercompo2015/report/
+	*/
 RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
 {
 	float3 n = state.ffnormal;
@@ -70,11 +73,11 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 
 	float specularAlpha = max(0.001f, mat.roughness);
 	float clearcoatAlpha = lerp(0.1f, 0.001f, mat.clearcoatGloss);
-	
+
 	float diffuseRatio = 0.5f * (1.f - mat.metallic);
 	float specularRatio = 1.f - diffuseRatio;
 
-	float3 half = normalize(L+V);
+	float3 half = normalize(L + V);
 
 	float cosTheta = abs(dot(half, n));
 	float pdfGTR2 = GTR2(cosTheta, specularAlpha) * cosTheta;
@@ -86,14 +89,16 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 	float pdfDiff = abs(dot(L, n))* (1.0f / M_PIf);
 
 	// weight pdfs according to ratios
-	prd.pdf =  diffuseRatio * pdfDiff + specularRatio * pdfSpec;
+	prd.pdf = diffuseRatio * pdfDiff + specularRatio * pdfSpec;
 
 }
 
-/*
-	https://learnopengl.com/PBR/IBL/Specular-IBL
-*/
 
+/*
+	https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
+	http://simon-kallweit.me/rendercompo2015/report/
+	https://learnopengl.com/PBR/IBL/Specular-IBL
+	*/
 RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
 {
 	float3 N = state.ffnormal;
@@ -101,27 +106,32 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 	prd.origin = state.fhp;
 
 	float3 dir;
-	
+
 	float probability = rnd(prd.seed);
 	float diffuseRatio = 0.5f * (1.0f - mat.metallic);
 
 	float r1 = rnd(prd.seed);
 	float r2 = rnd(prd.seed);
 
-	optix::Onb onb( N ); // basis
+	optix::Onb onb(N); // basis
+
+	float a = max(0.001f, mat.roughness);
 
 	if (probability < diffuseRatio) // sample diffuse
 	{
 		cosine_sample_hemisphere(r1, r2, dir);
 		onb.inverse_transform(dir);
+
+		// update path feature
+		prd.roughness = a;
+		prd.tag = DIFF;
 	}
 	else
 	{
-		float a = max(0.001f, mat.roughness);
-
+		// GTR2 sampling
 		float phi = r1 * 2.0f * M_PIf;
-        
-		float cosTheta = sqrtf((1.0f - r2) / (1.0f + (a*a-1.0f) *r2));      
+
+		float cosTheta = sqrtf((1.0f - r2) / (1.0f + (a*a - 1.0f) *r2)); // GGX sampling (roughdielectric.cu)
 		float sinTheta = sqrtf(1.0f - (cosTheta * cosTheta));
 		float sinPhi = sinf(phi);
 		float cosPhi = cosf(phi);
@@ -131,11 +141,19 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		dir = 2.0f*dot(V, half)*half - V; //reflection vector
 
+		// update path feature
+		prd.roughness = a;
+		prd.tag = (a > 0.01f) ? GLOS : SPEC;
 	}
 	prd.bsdfDir = dir;
 }
 
 
+/*
+	https://disney-animation.s3.amazonaws.com/library/s2012_pbs_disney_brdf_notes_v2.pdf
+	http://simon-kallweit.me/rendercompo2015/report/
+	https://github.com/wdas/brdf/blob/master/src/brdfs/disney.brdf
+	*/
 RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
 {
 	float3 N = state.ffnormal;
@@ -163,24 +181,19 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	float Fd90 = 0.5f + 2.0f * LDotH*LDotH * mat.roughness;
 	float Fd = lerp(1.0f, Fd90, FL) * lerp(1.0f, Fd90, FV);
 
-	// Based on Hanrahan-Krueger brdf approximation of isotrokPic bssrdf
+	// Based on Hanrahan-Krueger brdf approximation of isotropic bssrdf
 	// 1.25 scale is used to (roughly) preserve albedo
 	// Fss90 used to "flatten" retroreflection based on roughness
 	float Fss90 = LDotH*LDotH*mat.roughness;
 	float Fss = lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV);
 	float ss = 1.25f * (Fss * (1.0f / (NDotL + NDotV) - 0.5f) + 0.5f);
 
-	// specular
-	//float aspect = sqrt(1-mat.anisotrokPic*.9);
-	//float ax = Max(.001f, sqr(mat.roughness)/aspect);
-	//float ay = Max(.001f, sqr(mat.roughness)*aspect);
-	//float Ds = GTR2_aniso(NDotH, Dot(H, X), Dot(H, Y), ax, ay);
-	
-	float a = max(0.001f, mat.roughness);
+	// specular 
+	float a = sqr(max(0.001f, mat.roughness)); // Section 5.4 of the first ref.
 	float Ds = GTR2(NDotH, a);
 	float FH = SchlickFresnel(LDotH);
 	float3 Fs = lerp(Cspec0, make_float3(1.0f), FH);
-	float roughg = sqr(mat.roughness*0.5f + 0.5f);
+	float roughg = sqr(mat.roughness*0.5f + 0.5f); // Section 5.6 of the first ref.
 	float Gs = smithG_GGX(NDotL, roughg) * smithG_GGX(NDotV, roughg);
 
 	// sheen
@@ -189,11 +202,14 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	// clearcoat (ior = 1.5 -> F0 = 0.04)
 	float Dr = GTR1(NDotH, lerp(0.1f, 0.001f, mat.clearcoatGloss));
 	float Fr = lerp(0.04f, 1.0f, FH);
-	float Gr = smithG_GGX(NDotL, 0.25f) * smithG_GGX(NDotV, 0.25f);
+	float Gr = smithG_GGX(NDotL, 0.25f) * smithG_GGX(NDotV, 0.25f); // Section 5.6 of the first ref.
 
 	float3 out = ((1.0f / M_PIf) * lerp(Fd, ss, mat.subsurface)*Cdlin + Fsheen)
 		* (1.0f - mat.metallic)
 		+ Gs*Fs*Ds + 0.25f*mat.clearcoat*Gr*Fr*Dr;
 
-	return out * clamp(dot(N, L), 0.0f, 1.0f);
+	// update path feature
+	prd.thpt_at_vtx = out * clamp(dot(N, L), 0.0f, 1.0f);
+
+	return prd.thpt_at_vtx;
 }

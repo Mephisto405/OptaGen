@@ -54,28 +54,27 @@ if args.ckp_s != "":
             break
     scenes = scenes[idx:]
 print('[] Number of scenes: {}'.format(len(scenes)))
-print('[] Patches per scene: {}'.format(patches_per_scenes))
-print('[] Expected number of patches to generate: {}'.format(patches_per_scenes * len(scenes)))
+print('[] Images per scene: {}'.format(patches_per_scenes))
+print('[] Expected number of images to generate: {}'.format(patches_per_scenes * len(scenes)))
 
 hdrs = []
 for root, dirs, files in os.walk(args.hdr, topdown=True):
     for name in files:
         if '.hdr' in name:
             hdrs.append(path.join(root, name))
-patches_per_hdrs = 100
 print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 
 ##
 # Rendering
 print('[] Rendering start...')
-SCENES = ['coffee', 'living-room-2', 'living-room-3', 'staircase']
-NUMS = [5, 10, 15, 15]
+#SCENES = ['coffee', 'living-room-2', 'living-room-3', 'staircase']
+#NUMS = [5, 10, 15, 15]
 i = 0
 for scene in scenes:
-    if scene.split("\\")[-2] not in SCENES:
-        continue
+    #if scene.split("\\")[-2] not in SCENES:
+    #    continue
     print(scene)
-    print("num: %d" % (NUMS[i]))
+    #print("num: %d" % (NUMS[i]))
     cmd = [
             args.exe,
             '-M', str(args.mode),
@@ -83,7 +82,7 @@ for scene in scenes:
             '-d', args.hdr,
             '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
             '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
-            '-n', str(NUMS[i]), #str(patches_per_scenes),
+            '-n', str(patches_per_scenes), #str(NUMS[i]),
             '-c', str(args.ckp_i),
             '-p', str(args.spp),
             '-m', str(args.mspp),

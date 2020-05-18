@@ -139,10 +139,6 @@ RT_PROGRAM void closest_hit()
 	sysBRDFPdf[mat.brdf](mat, state, prd);
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
 
-	// Path feature updating
-	prd.albedo = mat.color;
-	prd.normal = ffnormal;
-
 	if (prd.pdf > 0.0f)
 		prd.throughput *= f / prd.pdf;
 	else

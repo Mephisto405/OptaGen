@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,22 +39,22 @@
 using namespace optix;
 
 
-rtDeclareVariable(float3,        eye, , );
-rtDeclareVariable(float3,        U, , );
-rtDeclareVariable(float3,        V, , );
-rtDeclareVariable(float3,        W, , );
-rtDeclareVariable(float3,        bad_color, , );
-rtDeclareVariable(float,         scene_epsilon, , );
-rtDeclareVariable(float3,        cutoff_color, , );
-rtDeclareVariable(int,           max_depth, , );
+rtDeclareVariable(float3, eye, , );
+rtDeclareVariable(float3, U, , );
+rtDeclareVariable(float3, V, , );
+rtDeclareVariable(float3, W, , );
+rtDeclareVariable(float3, bad_color, , );
+rtDeclareVariable(float, scene_epsilon, , );
+rtDeclareVariable(float3, cutoff_color, , );
+rtDeclareVariable(int, max_depth, , );
 rtBuffer<float4, 2>              output_buffer;
-rtBuffer<pathFeatures6[4], 2>    mbpf_buffer; /* Multiple-bounced feature buffer */
+rtBuffer<PathFeature[4], 2>      mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
-rtDeclareVariable(rtObject,      top_object, , );
-rtDeclareVariable(unsigned int,  frame, , );
-rtDeclareVariable(unsigned int,  curr_time, , );
-rtDeclareVariable(int,			 mbpf_frames, , );
-rtDeclareVariable(uint2,         launch_index, rtLaunchIndex, );
+rtDeclareVariable(rtObject, top_object, , );
+rtDeclareVariable(unsigned int, frame, , );
+rtDeclareVariable(unsigned int, curr_time, , );
+rtDeclareVariable(int, mbpf_frames, , );
+rtDeclareVariable(uint2, launch_index, rtLaunchIndex, );
 
 
 __device__ inline float4 ToneMap(const float4& c, float limit)
@@ -88,7 +88,7 @@ __device__ inline float3 LinearToSrgb(const float3& c)
 __device__ inline float3 clip(const float3& c)
 {
 	return make_float3(
-		c.x < 0 ? 0 : c.x > 1.0 ? 1.0 : c.x, 
+		c.x < 0 ? 0 : c.x > 1.0 ? 1.0 : c.x,
 		c.y < 0 ? 0 : c.y > 1.0 ? 1.0 : c.y,
 		c.z < 0 ? 0 : c.z > 1.0 ? 1.0 : c.z
 		);
@@ -101,7 +101,7 @@ RT_PROGRAM void pinhole_camera()
 
 	// Subpixel jitter: send the ray through a different position inside the pixel each time,
 	// to provide antialiasing.
-	float2 subpixel_jitter = frame == 0 ? make_float2( 0.0f ) : make_float2(rnd( seed ) - 0.5f, rnd( seed ) - 0.5f);
+	float2 subpixel_jitter = frame == 0 ? make_float2(0.0f) : make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
 
 	float2 d = (make_float2(launch_index) + subpixel_jitter) / make_float2(screen) * 2.f - 1.f;
 	float3 ray_origin = eye;
@@ -113,25 +113,29 @@ RT_PROGRAM void pinhole_camera()
 	prd.done = false;
 	prd.pdf = 0.0f;
 	prd.specularBounce = false;
+	prd.thpt_at_vtx = make_float3(0.0f);
+	prd.tag = DIFF;
+	prd.roughness = 0.0f;
+
 
 	// These represent the current shading state and will be set by the closest-hit or miss program
 
 	// attenuation (<= 1) from surface interaction.
-	prd.throughput = make_float3( 1.0f );
+	prd.throughput = make_float3(1.0f);
 
 	// light from a light source or miss program
-	prd.radiance = make_float3( 0.0f );
+	prd.radiance = make_float3(0.0f);
 
 	// next ray to be traced
-	prd.origin = make_float3( 0.0f );
+	prd.origin = make_float3(0.0f);
 	prd.bsdfDir = make_float3(0.0f);
 
-	float3 result = make_float3( 0.0f );
+	float3 result = make_float3(0.0f);
 
-	pathFeatures6 pf6 {
-		{ optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f) },
-		{ optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f) },
-		{ optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f), optix::make_float3(0.f) },
+	PathFeature pf{
+		{ optix::make_float3(0.f) },
+		{ DIFF },
+		{ 0.0f }
 	};
 
 	// Main render loop. This is not recursive, and for high ray depths
@@ -139,22 +143,23 @@ RT_PROGRAM void pinhole_camera()
 	// in closest hit programs.
 	//printf("here1\n");
 	for (;;) {
-		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon );
+		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon);
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
-		
-		/* Path features */
-		if (prd.depth < 5)
-		{
-			pf6.rad[prd.depth + 1] = prd.radiance; // rad[1], ..., rad[5]
-		}
 
+		if (prd.done)
+			break;
+
+		/* Path features */
 		if (prd.depth < 6)
 		{
-			pf6.alb[prd.depth] = clip(prd.albedo); // alb[0], ..., alb[5]
-			pf6.nor[prd.depth] = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
-				prd.normal :
-				0.5f * normalize(prd.normal) + make_float3(0.5f);
+			pf.throughput[prd.depth] = prd.thpt_at_vtx;
+			pf.tag[prd.depth] = (float)prd.tag;
+			pf.roughness[prd.depth] = prd.roughness;
+		}
+		else
+		{
+			pf.throughput[5] *= prd.thpt_at_vtx;
 		}
 
 		if (prd.done || prd.depth >= max_depth)
@@ -166,25 +171,26 @@ RT_PROGRAM void pinhole_camera()
 		ray_origin = prd.origin;
 		ray_direction = prd.bsdfDir;
 	}
-	pf6.rad[0] = prd.radiance;
+
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
-	if( frame > 0 ) {
+	if (frame > 0) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
-	} else {
+	}
+	else {
 		acc_val = make_float4(result, 0.f);
 	}
 
 	output_buffer[launch_index] = acc_val; // uint
 	accum_buffer[launch_index] = acc_val;
 	if (frame < mbpf_frames)
-		mbpf_buffer[launch_index][frame] = pf6;
+		mbpf_buffer[launch_index][frame] = pf;
 }
 
 RT_PROGRAM void exception()
 {
 	const unsigned int code = rtGetExceptionCode();
-	rtPrintf( "Caught exception 0x%X at launch index (%d,%d)\n", code, launch_index.x, launch_index.y );
+	rtPrintf("Caught exception 0x%X at launch index (%d,%d)\n", code, launch_index.x, launch_index.y);
 	output_buffer[launch_index] = make_float4(bad_color);
 }

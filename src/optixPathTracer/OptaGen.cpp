@@ -181,7 +181,7 @@ static Buffer getOutputBuffer()
 /*
 static Buffer getNormalBuffer()
 {
-	return context["normal_buffer"]->getBuffer();
+return context["normal_buffer"]->getBuffer();
 }
 */
 
@@ -230,8 +230,9 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 
 	// Multiple-bounce path feature buffer
 	Buffer mbpf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
-	scene->properties.width, scene->properties.height);
-	mbpf_buffer->setElementSize(sizeof(pathFeatures6) * num_frames); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+		scene->properties.width, scene->properties.height);
+	mbpf_buffer->setElementSize(sizeof(PathFeature) * num_frames); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+	std::cerr << "Size of path feature: " << sizeof(PathFeature) << " bytes" << std::endl;
 	context["mbpf_buffer"]->set(mbpf_buffer);
 
 	// Accumulation buffer
@@ -666,7 +667,7 @@ void setRandomMaterials()
 		{
 			scene->materials[i].brdf = BrdfType::ROUGHDIELECTRIC;
 			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
-			scene->materials[i].roughness = powf(10, randFloat(-2.0f, 0.0f));
+			scene->materials[i].roughness = powf(10, randFloat(-1.56, -0.222f));
 			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
 			scene->materials[i].extIOR = 1.0f;
 			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;
@@ -685,7 +686,7 @@ void setRandomBackground(const std::string base_hdrs, const std::vector<std::str
 	std::cerr << scene->properties.envmap_fn << std::endl;
 	context["option"]->setInt(1); // 1: Miss function on, 0: off (all black)
 
-	if (m_environmentTexture.getWidth() != 1) { 
+	if (m_environmentTexture.getWidth() != 1) {
 		// if there is a pre-assigned env light
 		scene->lights.pop_back();
 
@@ -1052,15 +1053,13 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int 
 
 	float* data;
 	rtBufferMap(buffer->get(), (void**)&data);
-	
+
 	buffer->getSize(buffer_width, buffer_height);
 	width = static_cast<GLsizei>(buffer_width);
 	height = static_cast<GLsizei>(buffer_height);
 
 	if (ref)
 	{
-		assert(buffer->getElementSize() / sizeof(float) == 4);
-
 		std::vector<float> pix(width * height * 3);
 		// this buffer is upside down
 		for (int j = height - 1; j >= 0; --j)
@@ -1088,17 +1087,17 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int 
 	}
 	else
 	{
-		assert(buffer->getElementSize() / sizeof(float) == 4 * 54);
+		int feat_dim = buffer->getElementSize() / sizeof(float) / num_of_frames;
 
-		std::vector<float> pix(width * height * 4 * 54);
+		std::vector<float> pix(width * height * num_of_frames * feat_dim);
 		// this buffer is upside down
 		for (int j = height - 1; j >= 0; --j)
 		{
-			float* dst = &pix[0] + (4 * 54 * width*(height - 1 - j));
-			float* src = data + 4 * 54 * width*j;
+			float* dst = &pix[0] + (num_of_frames * feat_dim * width*(height - 1 - j));
+			float* src = data + num_of_frames * feat_dim * width*j;
 			for (int i = 0; i < width; i++)
 			{
-				for (int elem = 0; elem < 4 * 54; ++elem)
+				for (int elem = 0; elem < num_of_frames * feat_dim; ++elem)
 				{
 					*dst++ = *src++;
 				}
@@ -1110,12 +1109,12 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int 
 		cnpy::npy_save(
 			filename,
 			&pix[0],
-			{ buffer_width, buffer_height, 
-			(size_t)num_of_frames, 
-			buffer->getElementSize() / sizeof(float) / num_of_frames },
+			{ buffer_width, buffer_height,
+			(size_t)num_of_frames,
+			(size_t)feat_dim },
 			"w");
 	}
-	
+
 	RT_CHECK_ERROR(rtBufferUnmap(buffer->get()));
 
 	std::cerr << "[Output] " << (ref ? "(ref) " : "(feat) ") << filename << std::endl;
@@ -1132,8 +1131,8 @@ int main(int argc, char** argv)
 
 	std::vector<std::string> opts = {
 		"-h", "--help", "-M", "--mode", "-s", "--scene",
-		"-d", "--hdr", "-i", "--in", "-o", "--out", 
-		"-n", "--num", "-c", "--ckp", "-p", "--spp", "-m", "--mspp", 
+		"-d", "--hdr", "-i", "--in", "-o", "--out",
+		"-n", "--num", "-c", "--ckp", "-p", "--spp", "-m", "--mspp",
 		"-r", "--roc", "-w", "--width", "-v", "--visual"
 	};
 
@@ -1361,7 +1360,7 @@ int main(int argc, char** argv)
 			printUsageAndExit();
 		}
 	}
-	
+
 	if (max_ref_frames < num_of_frames)
 	{
 		std::cerr << "Option '--mspp' should be larger than '--spp'. \n";
@@ -1472,7 +1471,7 @@ int main(int argc, char** argv)
 			scene->properties.camera_lookat = aabb.center();
 		if (!scene->properties.init_up)
 			scene->properties.camera_up = optix::make_float3(0.0f, 1.0f, 0.0f);
-		
+
 		if (visual || (in_file.empty() && out_file.empty()))
 		{
 			std::cerr << "[Mode] visual";
@@ -1535,7 +1534,7 @@ int main(int argc, char** argv)
 						context->launch(0, scene->properties.width, scene->properties.height);
 					}
 					std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "s\n";
-					
+
 					writeBufferToNpy(out_file, getOutputBuffer(), true, num_of_frames);
 				}
 
@@ -1558,7 +1557,7 @@ int main(int argc, char** argv)
 				struct dirent* entry;
 				DIR* dir;
 				std::vector<std::string> entries;
-				
+
 				if (hdrs_home != "")
 				{
 					dir = opendir(hdrs_home.c_str());

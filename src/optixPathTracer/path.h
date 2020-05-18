@@ -2,6 +2,15 @@
 
 #include <optixu/optixu_vector_types.h>
 
+enum InteractionType
+{
+	DIFF, // sampled from the diffuse lobe
+	GLOS, // sampled from 
+	SPEC,
+	REFL, // dielectric reflection
+	TRAN  // dielectric transmission (refraction)
+};
+
 struct pathFeatures6
 {
 	optix::float3 rad[6];
@@ -9,11 +18,11 @@ struct pathFeatures6
 	optix::float3 nor[6];
 };
 
-//
-struct path_aux_feat6
+// multi-bounce path feature
+struct PathFeature
 {
 	optix::float3 throughput[6]; // estimate에서 p(x)와 L(.)를 제외한 나머지?
-	int tag[6]; // BrdfType or diffuse/reflection/ 등 광현상에 관한 tag
+	float tag[6]; // BrdfType or diffuse/reflection/ 등 광현상에 관한 tag
 	float roughness[6]; // roughness of brdf
 
 	// Manual padding to float4 alignment.

@@ -28,6 +28,12 @@ std::string getDir(const char* filename)
 	return (pos_slash != std::string::npos) ? fn.substr(0, pos_slash + 1) : std::string(sutil::samplesDir()) + "/data/";
 }
 
+float clip(float &x, float min, float max)
+{
+	x = (x < min) ? min : ((x > max ? max : x));
+	return x;
+}
+
 Scene* LoadScene(const char* filename)
 {
 	Scene *scene = new Scene;
@@ -84,7 +90,6 @@ Scene* LoadScene(const char* filename)
 				sscanf(line, " specular %f", &material.specular);
 				sscanf(line, " specularTint %f", &material.specularTint);
 				sscanf(line, " roughness %f", &material.roughness);
-				sscanf(line, " anisotropic %f", &material.anisotropic);
 				sscanf(line, " sheen %f", &material.sheen);
 				sscanf(line, " sheenTint %f", &material.sheenTint);
 				sscanf(line, " clearcoat %f", &material.clearcoat);
@@ -104,6 +109,8 @@ Scene* LoadScene(const char* filename)
 					material.brdf = LAMBERT;
 				else if (strcmp(brdf_type, "ROUGHDIELECTRIC") == 0 || strcmp(brdf_type, "3") == 0)
 					material.brdf = ROUGHDIELECTRIC;
+				else
+					material.brdf = DISNEY;
 
 				if (strcmp(dist_type, "Beckmann") == 0 ||
 					strcmp(dist_type, "beckmann") == 0 ||
@@ -117,6 +124,37 @@ Scene* LoadScene(const char* filename)
 					strcmp(dist_type, "phong") == 0 ||
 					strcmp(dist_type, "2") == 0)
 					material.dist = Phong;
+				else
+					material.dist = GGX;
+
+				// clipping
+				clip(material.metallic, 0.0f, 1.0f);
+				clip(material.subsurface, 0.0f, 1.0f);
+				clip(material.specular, 0.0f, 1.0f);
+				clip(material.specularTint, 0.0f, 1.0f);
+				clip(material.sheen, 0.0f, 1.0f);
+				clip(material.sheenTint, 0.0f, 1.0f);
+				clip(material.clearcoat, 0.0f, 1.0f);
+				clip(material.clearcoatGloss, 0.0f, 1.0f);
+
+				if (material.brdf == DISNEY)
+				{
+					if (material.roughness < 0.004f)
+					{
+						printf("Cannot create a GGX distribution with roughness<0.004 (clamped to 0.004)."
+							"Please use the corresponding smooth reflectance model to get zero roughness. \n");
+						material.roughness = 0.004f;
+					}
+				}
+				else if (material.brdf == ROUGHDIELECTRIC)
+				{
+					if (material.roughness < 0.023f)
+					{
+						printf("Cannot create a GGX distribution with roughness<0.023 (clamped to 0.023)."
+							"Please use the corresponding smooth reflectance model to get zero roughness. \n");
+						material.roughness = 0.023f;
+					}
+				}
 
 			}
 

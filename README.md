@@ -41,8 +41,6 @@ The star sign(*) indicates the original implementation of the author of the [Opt
 
 - [x] *Simple glass
 
-- [ ] Reconstruction filtering (tent filter): writeBufferToFile 에서 구현 ([1/2 1 1/2][1/2 1 1/2]'를 normalize해서 쓰면 됨)
-
 - [ ] opacity (mask): 반투명 물체 구현이 시급
 
 - [ ] conductor => eta, k 값 적용 가능하도록 (그래야 알루미늄, 철 등을 구분 가능) (혹시 eta, k 필요 없이도 sheen, clearcoat 로 구현 가능?) (color를 강제로 넣는 것도 괜찮을 듯)

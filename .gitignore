@@ -3,3 +3,4 @@
 /src/CMake/
 /build/
 /data/
+*.pyc
