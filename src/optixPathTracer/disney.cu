@@ -189,7 +189,7 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	float ss = 1.25f * (Fss * (1.0f / (NDotL + NDotV) - 0.5f) + 0.5f);
 
 	// specular 
-	float a = sqr(max(0.001f, mat.roughness)); // Section 5.4 of the first ref.
+	float a = max(0.001f, mat.roughness); // Section 5.4 of the first ref.
 	float Ds = GTR2(NDotH, a);
 	float FH = SchlickFresnel(LDotH);
 	float3 Fs = lerp(Cspec0, make_float3(1.0f), FH);
