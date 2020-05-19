@@ -178,7 +178,7 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	// Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
 	// and mix in diffuse retro-reflection based on roughness
 	float FL = SchlickFresnel(NDotL), FV = SchlickFresnel(NDotV);
-	float Fd90 = 0.5f + 2.0f * LDotH*LDotH * mat.roughness;
+	float Fd90 = 0.5f + 2.0f * LDotH * LDotH * mat.roughness;
 	float Fd = lerp(1.0f, Fd90, FL) * lerp(1.0f, Fd90, FV);
 
 	// Based on Hanrahan-Krueger brdf approximation of isotropic bssrdf

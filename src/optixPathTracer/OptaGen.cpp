@@ -641,21 +641,21 @@ void setRandomMaterials()
 		scene->materials[i].dist = DistType::GGX;
 
 		float what_brdf = randFloat(0.0f, 1.0f);
-		if (what_brdf < 0.9f)
+		if (what_brdf < 0.85f)
 		{
 			scene->materials[i].brdf = BrdfType::DISNEY;
-			scene->materials[i].color = optix::make_float3(randFloat(0.0f, 1.0f), randFloat(0.0f, 1.0f), randFloat(0.0f, 1.0f));
+			scene->materials[i].color = optix::make_float3(randFloat(0.01f, 1.0f), randFloat(0.01f, 1.0f), randFloat(0.01f, 1.0f));
 			scene->materials[i].metallic = randFloat(0.0f, 1.0f);
 			scene->materials[i].subsurface = randFloat(0.0f, 0.2f);
 			scene->materials[i].specular = randFloat(0.0f, 1.0f);
-			scene->materials[i].roughness = randFloat(0.0f, 0.6f);
+			scene->materials[i].roughness = powf(randFloat(sqrtf(0.004f), sqrtf(0.6f)), 2.0f); // for visual linearity (GTR2 sampling)
 			scene->materials[i].specularTint = randFloat(0.0f, 0.3f);
 			scene->materials[i].sheen = randFloat(0.0f, 0.2f);
 			scene->materials[i].sheenTint = randFloat(0.0f, 0.7f);
 			scene->materials[i].clearcoat = randFloat(0.0f, 0.3f);
 			scene->materials[i].clearcoatGloss = randFloat(0.0f, 1.0f);
 		}
-		else if (what_brdf < 0.95f)
+		else if (what_brdf < 0.90f)
 		{
 			scene->materials[i].brdf = BrdfType::GLASS;
 			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
@@ -667,7 +667,7 @@ void setRandomMaterials()
 		{
 			scene->materials[i].brdf = BrdfType::ROUGHDIELECTRIC;
 			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
-			scene->materials[i].roughness = powf(10, randFloat(-1.56, -0.222f));
+			scene->materials[i].roughness = powf(randFloat(sqrtf(0.023f), sqrtf(0.6f)), 2.0f); // for visual linearity (GTR2 sampling)
 			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
 			scene->materials[i].extIOR = 1.0f;
 			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;

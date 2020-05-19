@@ -13,7 +13,7 @@
 
  You may obtain a copy of the License at
  http://www.apache.org/licenses/LICENSE-2.0
-*/
+ */
 
 #include <optix.h>
 #include <optixu/optixu_math_namespace.h>
@@ -32,10 +32,10 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 {
 	float3 n = state.ffnormal;
 	float3 L = prd.bsdfDir;
-	
+
 	float pdfDiff = abs(dot(L, n))* (1.0f / M_PIf);
 
-	prd.pdf =  pdfDiff;
+	prd.pdf = pdfDiff;
 
 }
 
@@ -45,15 +45,15 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 	prd.origin = state.fhp;
 
 	float3 dir;
-	
+
 	float r1 = rnd(prd.seed);
 	float r2 = rnd(prd.seed);
 
-	optix::Onb onb( N );
+	optix::Onb onb(N);
 
 	cosine_sample_hemisphere(r1, r2, dir);
 	onb.inverse_transform(dir);
-	
+
 	prd.bsdfDir = dir;
 
 	// update path feature

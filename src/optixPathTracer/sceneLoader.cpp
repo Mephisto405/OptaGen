@@ -128,6 +128,7 @@ Scene* LoadScene(const char* filename)
 					material.dist = GGX;
 
 				// clipping
+				clip(material.color.x, 0.0f, 1.0f);
 				clip(material.metallic, 0.0f, 1.0f);
 				clip(material.subsurface, 0.0f, 1.0f);
 				clip(material.specular, 0.0f, 1.0f);
@@ -136,6 +137,7 @@ Scene* LoadScene(const char* filename)
 				clip(material.sheenTint, 0.0f, 1.0f);
 				clip(material.clearcoat, 0.0f, 1.0f);
 				clip(material.clearcoatGloss, 0.0f, 1.0f);
+				clip(material.roughness, 0.0f, 1.0f);
 
 				if (material.brdf == DISNEY)
 				{

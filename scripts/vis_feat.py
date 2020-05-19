@@ -31,7 +31,6 @@ if len(arr.shape) == 4 and arr.shape[3] == 32:
     throughput = arr[:,:,:,:18]
     tag = arr[:,:,:,18:24]
     roughness = arr[:,:,:,24:30]
-    #throughput = np.log10(throughput+1)
     im = np.mean(throughput[:,:,:,0:3], 2)
     print(np.max(im))
     im[im <= 500.0] = 0.0
@@ -46,9 +45,7 @@ if len(arr.shape) == 4 and arr.shape[3] == 32:
             plt.title('Throughput')
         thpt = np.mean(throughput[:,:,:,3*(i-1):3*i], 2)
         print(np.max(thpt))
-        #thpt[thpt <= 500] = 0.0
-        #thpt[thpt > 500] = 1.0
-        plt.imshow(thpt)
+        plt.imshow(np.clip(thpt, 0.0, 1.0))
 
     for i in range(7,13,1):
         plt.subplot(3,6,i)

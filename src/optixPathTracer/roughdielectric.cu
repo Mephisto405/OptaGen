@@ -23,8 +23,8 @@ RT_FUNCTION inline float sgn(float x)
 	return (x >= 0.0f) ? 1.0f : -1.0f;
 }
 
-/* Convert the user-specified roughness to the roughness value suitable 
-   for each model. This is done in a way such that even different models 
+/* Convert the user-specified roughness to the roughness value suitable
+   for each model. This is done in a way such that even different models
    produce similar appearances for the same user-specified roughness. */
 RT_FUNCTION float alphaConversion(float roughness, DistType dist)
 {
@@ -78,8 +78,8 @@ RT_FUNCTION float3 sample(float r1, float r2, float alpha, DistType dist)
 }
 
 /* Fresnel (reflection) coefficient.
-   This term describes how much of an electromagnetic wave is reflected 
-   by an impedance discontinuity in the transmission medium 
+   This term describes how much of an electromagnetic wave is reflected
+   by an impedance discontinuity in the transmission medium
    [Wikipedia: Reflection coefficient]. */
 RT_FUNCTION float fresnelTerm(float cosThetaI, float invEta, float &cosThetaT)
 {
@@ -106,7 +106,7 @@ RT_FUNCTION float fresnelTerm(float cosThetaI, float invEta)
 }
 
 /* Microfacet distribution function. */
-RT_FUNCTION float D(float cosThetaM, float alpha,  DistType dist)
+RT_FUNCTION float D(float cosThetaM, float alpha, DistType dist)
 {
 	if (cosThetaM <= 0.0f)
 		return 0.0f;
@@ -259,7 +259,7 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 	{
 		/* Half vector */
 		const float3 m = normalize(i + o) * sgn(iDotN);
-		
+
 		/* Fresnel term computing */
 		const float iDotm = dot(i, m);
 		const float invEta = iDotm > 0.0f ? mat.extIOR / mat.intIOR : mat.intIOR / mat.extIOR;
@@ -276,8 +276,8 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 	{
 		/* Half vector */
 		const float eta = iDotN > 0.0f ? mat.intIOR / mat.extIOR : mat.extIOR / mat.intIOR;
-		const float3 m = -normalize(i + eta * o); 
-		
+		const float3 m = -normalize(i + eta * o);
+
 		/* Fresnel term computing */
 		const float iDotm = dot(i, m);
 		const float invEta = iDotm > 0.0f ? mat.extIOR / mat.intIOR : mat.intIOR / mat.extIOR;
