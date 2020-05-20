@@ -612,7 +612,7 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 		randFloat(-0.5f, 0.5f));
 
 	sutil::Camera camera(
-		scene->properties.width, scene->properties.height, randFloat(30.f, 60.f),
+		scene->properties.width, scene->properties.height, randFloat(30.f, 70.f),
 		&camera_eye.x, &camera_lookat.x, &camera_up.x,
 		context["eye"], context["U"], context["V"], context["W"]);
 
@@ -655,19 +655,19 @@ void setRandomMaterials()
 			scene->materials[i].clearcoat = randFloat(0.0f, 0.3f);
 			scene->materials[i].clearcoatGloss = randFloat(0.0f, 1.0f);
 		}
-		else if (what_brdf < 0.90f)
-		{
-			scene->materials[i].brdf = BrdfType::GLASS;
-			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
-			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
-			scene->materials[i].extIOR = 1.0f;
-			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;
-		}
 		else
 		{
-			scene->materials[i].brdf = BrdfType::ROUGHDIELECTRIC;
 			scene->materials[i].color = optix::make_float3(randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f), randFloat(0.7f, 1.0f));
-			scene->materials[i].roughness = powf(randFloat(sqrtf(0.023f), sqrtf(0.6f)), 2.0f); // for visual linearity (GTR2 sampling)
+			scene->materials[i].roughness = powf(randFloat(sqrtf(0.0f), sqrtf(0.6f)), 2.0f); // for visual linearity (GTR2 sampling)
+			if (scene->materials[i].roughness < 0.023f)
+			{
+				scene->materials[i].roughness = 0.0f;
+				scene->materials[i].brdf = BrdfType::GLASS;
+			}
+			else
+			{
+				scene->materials[i].brdf = BrdfType::ROUGHDIELECTRIC;
+			}
 			scene->materials[i].intIOR = randFloat(1.31f, 2.419f);
 			scene->materials[i].extIOR = 1.0f;
 			scene->materials[i].albedoID = RT_TEXTURE_ID_NULL;

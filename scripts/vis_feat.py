@@ -33,10 +33,6 @@ if len(arr.shape) == 4 and arr.shape[3] == 32:
     roughness = arr[:,:,:,24:30]
     im = np.mean(throughput[:,:,:,0:3], 2)
     print(np.max(im))
-    im[im <= 500.0] = 0.0
-    im[im > 500.0] = 1.0
-    #plt.imshow(im)
-    #plt.show()
     roughness /= np.max(roughness)
 
     for i in range(1,7,1):
