@@ -75,7 +75,7 @@
 
 using namespace optix;
 
-const char* const SAMPLE_NAME = "OptaGen";
+const char* const SAMPLE_NAME = "optixPathTracer";
 std::string SAVE_DIR = "";
 
 const int NUMBER_OF_BRDF_INDICES = 4;
@@ -500,124 +500,137 @@ float swapScore(optix::float3 v, optix::float3 aabb_min, optix::float3 aabb_max,
 
 sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt_fn)
 {
-	FILE* aabb_txt = fopen(aabb_txt_fn.c_str(), "r");
-	optix::float3 aabb_min, aabb_max; // minimum xyz, maximum xyz
-	optix::float3 camera_lookat, camera_eye;
-	bool indoor = true;
-	const int MAXLINELEN = 256;
-
-	if (!aabb_txt)
+	optix::float3 camera_eye, camera_lookat, camera_up;
+	FILE* aabb_txt = NULL;
+	
+	if (scene->cameras.size() > 0)
 	{
-		// aabb.txt 파일이 없다
-		std::cerr << "No predefined aabb.txt file" << std::endl;
-		aabb_min = aabb.m_min;
-		aabb_max = aabb.m_max;
-		indoor = true;
+		CameraParams cam = scene->cameras[rand() % scene->cameras.size()];
+		camera_eye = cam.camera_eye;
+		camera_lookat = cam.camera_lookat;
+		camera_up = cam.camera_up;
 	}
 	else
 	{
-		// aabb.txt 파일이 있다
-		std::cerr << "Using predefined aabb.txt file" << std::endl;
-		char line[MAXLINELEN];
-		char type[MAXLINELEN] = "None";
+		aabb_txt = fopen(aabb_txt_fn.c_str(), "r");
+		optix::float3 aabb_min, aabb_max; // minimum xyz, maximum xyz
+		bool indoor = true;
+		const int MAXLINELEN = 256;
 
-		while (fgets(line, MAXLINELEN, aabb_txt))
+		if (!aabb_txt)
 		{
-			sscanf(line, "type %s", type);
-			sscanf(line, "xmin %f", &aabb_min.x);
-			sscanf(line, "xmax %f", &aabb_max.x);
-			sscanf(line, "ymin %f", &aabb_min.y);
-			sscanf(line, "ymax %f", &aabb_max.y);
-			sscanf(line, "zmin %f", &aabb_min.z);
-			sscanf(line, "zmax %f", &aabb_max.z);
-		}
-
-		if (strcmp(type, "indoor") == 0)
+			// aabb.txt 파일이 없다
+			std::cerr << "No predefined aabb.txt file" << std::endl;
+			aabb_min = aabb.m_min;
+			aabb_max = aabb.m_max;
 			indoor = true;
-		else
-			indoor = false;
-	}
-
-	optix::float3 center = 0.5f * (aabb_min + aabb_max);
-	optix::float3 half_widths = 0.5f * (aabb_max - aabb_min);
-	float margin = 0.7; // safe margin to prevent camera-object occlusion, etc.
-
-	if (indoor)
-	{
-		std::cerr << "Indoor scene" << std::endl;
-
-		camera_lookat = make_float3(
-			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
-			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
-			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
-			);
-		camera_eye = make_float3(
-			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
-			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
-			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
-			);
-
-		float prob_lookat, prob_eye, d_lookat, d_eye;
-		d_lookat = swapScore(camera_lookat, aabb_min, aabb_max, prob_lookat);
-		d_eye = swapScore(camera_eye, aabb_min, aabb_max, prob_eye);
-
-		if (d_lookat > d_eye)
-		{
-			if (randFloat(0.0f, 1.0f) <= prob_lookat) // change lookat to eye in a low chance
-			{
-				optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
-				camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
-				camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
-			}
-		}
-		else if (d_lookat == d_eye)
-		{
-			if (randFloat(0.0f, 1.0f) <= 0.5f) // half chance
-			{
-				// swap
-				optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
-				camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
-				camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
-			}
 		}
 		else
 		{
-			if (randFloat(0.0f, 1.0f) >= prob_eye) // change lookat to eye in a high chance
+			// aabb.txt 파일이 있다
+			std::cerr << "Using predefined aabb.txt file" << std::endl;
+			char line[MAXLINELEN];
+			char type[MAXLINELEN] = "None";
+
+			while (fgets(line, MAXLINELEN, aabb_txt))
 			{
-				optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
-				camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
-				camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
+				sscanf(line, "type %s", type);
+				sscanf(line, "xmin %f", &aabb_min.x);
+				sscanf(line, "xmax %f", &aabb_max.x);
+				sscanf(line, "ymin %f", &aabb_min.y);
+				sscanf(line, "ymax %f", &aabb_max.y);
+				sscanf(line, "zmin %f", &aabb_min.z);
+				sscanf(line, "zmax %f", &aabb_max.z);
+			}
+
+			if (strcmp(type, "indoor") == 0)
+				indoor = true;
+			else
+				indoor = false;
+		}
+
+		optix::float3 center = 0.5f * (aabb_min + aabb_max);
+		optix::float3 half_widths = 0.5f * (aabb_max - aabb_min);
+		float margin = 0.7; // safe margin to prevent camera-object occlusion, etc.
+
+		if (indoor)
+		{
+			std::cerr << "Indoor scene" << std::endl;
+
+			camera_lookat = make_float3(
+				randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+				randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+				randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
+				);
+			camera_eye = make_float3(
+				randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+				randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+				randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
+				);
+
+			float prob_lookat, prob_eye, d_lookat, d_eye;
+			d_lookat = swapScore(camera_lookat, aabb_min, aabb_max, prob_lookat);
+			d_eye = swapScore(camera_eye, aabb_min, aabb_max, prob_eye);
+
+			if (d_lookat > d_eye)
+			{
+				if (randFloat(0.0f, 1.0f) <= prob_lookat) // change lookat to eye in a low chance
+				{
+					optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
+					camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
+					camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
+				}
+			}
+			else if (d_lookat == d_eye)
+			{
+				if (randFloat(0.0f, 1.0f) <= 0.5f) // half chance
+				{
+					// swap
+					optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
+					camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
+					camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
+				}
+			}
+			else
+			{
+				if (randFloat(0.0f, 1.0f) >= prob_eye) // change lookat to eye in a high chance
+				{
+					optix::float3 tmp = optix::make_float3(camera_eye.x, camera_eye.y, camera_eye.z);
+					camera_eye = optix::make_float3(camera_lookat.x, camera_lookat.y, camera_lookat.z);
+					camera_lookat = optix::make_float3(tmp.x, tmp.y, tmp.z);
+				}
 			}
 		}
-	}
-	else
-	{
-		std::cerr << "Object scene" << std::endl;
-		camera_lookat = make_float3(
-			randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
-			randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
-			randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
-			);
+		else
+		{
+			std::cerr << "Object scene" << std::endl;
+			camera_lookat = make_float3(
+				randFloat(center.x - margin * half_widths.x, center.x + margin * half_widths.x),
+				randFloat(center.y - margin * half_widths.y, center.y + margin * half_widths.y),
+				randFloat(center.z - margin * half_widths.z, center.z + margin * half_widths.z)
+				);
 
-		camera_eye = make_float3(
-			randFloat(center.x - 5 * half_widths.x, center.x + 5 * half_widths.x),
-			randFloat(center.y - half_widths.y, center.y + 5 * half_widths.y), // min.y에는 floor가 있는 경우가 많으므로 경계 확장 X
-			randFloat(center.z - 5 * half_widths.z, center.z + 5 * half_widths.z)
-			);
-	}
+			camera_eye = make_float3(
+				randFloat(center.x - 5 * half_widths.x, center.x + 5 * half_widths.x),
+				randFloat(center.y - half_widths.y, center.y + 5 * half_widths.y), // min.y에는 floor가 있는 경우가 많으므로 경계 확장 X
+				randFloat(center.z - 5 * half_widths.z, center.z + 5 * half_widths.z)
+				);
+		}
 
-	optix::float3 camera_up = optix::make_float3(
-		randFloat(-0.5f, 0.5f),
-		randFloat(-0.5f, 0.5f),
-		randFloat(-0.5f, 0.5f));
+		camera_up = optix::make_float3(
+			randFloat(-0.5f, 0.5f),
+			randFloat(-0.5f, 0.5f),
+			randFloat(-0.5f, 0.5f));
+	}
 
 	sutil::Camera camera(
-		scene->properties.width, scene->properties.height, randFloat(30.f, 70.f),
+		scene->properties.width, scene->properties.height, randFloat(60.f, 80.f),
 		&camera_eye.x, &camera_lookat.x, &camera_up.x,
 		context["eye"], context["U"], context["V"], context["W"]);
 
 	if (aabb_txt)
 		fclose(aabb_txt);
+
 	return camera;
 }
 
@@ -1476,13 +1489,47 @@ int main(int argc, char** argv)
 		{
 			std::cerr << "[Mode] visual";
 
-			sutil::Camera camera(
-				scene->properties.width, scene->properties.height, scene->properties.vfov,
-				&scene->properties.camera_eye.x, &scene->properties.camera_lookat.x, &scene->properties.camera_up.x,
-				context["eye"], context["U"], context["V"], context["W"]
-				);
+			if (num_of_patches > 1)
+			{
+				std::string aabb_txt_fn = scene_file.substr(0, scene_file.find_last_of("\\")) + "\\aabb.txt";
+				srand(static_cast <unsigned> (time(0)));
 
-			glfwRun(window, camera, top_group);
+				struct dirent* entry;
+				DIR* dir;
+				std::vector<std::string> entries;
+
+				if (hdrs_home != "")
+				{
+					dir = opendir(hdrs_home.c_str());
+					if (dir == NULL)
+					{
+						std::cerr << "HDRS directory not specified! " << std::endl;
+						exit(EXIT_FAILURE);
+					}
+					while ((entry = readdir(dir)) != NULL)
+					{
+						if (ends_with(entry->d_name, ".hdr"))
+							entries.push_back(std::string(entry->d_name));
+					}
+				}
+
+				sutil::Camera camera = setRandomCameraParams(aabb, aabb_txt_fn);
+				setRandomMaterials();
+				if (hdrs_home != "")
+					setRandomBackground(hdrs_home, entries);
+
+				glfwRun(window, camera, top_group);
+			}
+			else
+			{
+				sutil::Camera camera(
+					scene->properties.width, scene->properties.height, scene->properties.vfov,
+					&scene->properties.camera_eye.x, &scene->properties.camera_lookat.x, &scene->properties.camera_up.x,
+					context["eye"], context["U"], context["V"], context["W"]
+					);
+
+				glfwRun(window, camera, top_group);
+			}
 		}
 		else
 		{

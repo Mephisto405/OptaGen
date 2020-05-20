@@ -49,9 +49,10 @@ struct Scene
 	std::vector<MaterialParameter> materials;
 	std::vector<LightParameter> lights;
 	std::vector<Texture> textures;
+	std::vector<CameraParams> cameras; // series of camera parameters for random scene permutation
 	std::map<int, std::string> texture_map;
 	std::string dir;
-	Properties properties;
+	Properties properties; // primary camera parameters
 };
 
 Scene* LoadScene(const char* filename);

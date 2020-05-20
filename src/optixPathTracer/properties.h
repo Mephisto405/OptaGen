@@ -28,4 +28,11 @@ struct Properties
 	std::string envmap_fn;			/* filename of the environmental map */
 };
 
+struct CameraParams
+{
+	optix::float3 camera_eye;
+	optix::float3 camera_lookat;
+	optix::float3 camera_up;
+};
+
 #endif

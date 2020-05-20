@@ -261,6 +261,42 @@ Scene* LoadScene(const char* filename)
 		}
 
 		//--------------------------------------------
+		// Camera Permutation Parameters
+		
+		if (strstr(line, "camera"))
+		{
+			while (fgets(line, kMaxLineLength, file))
+			{
+				if (strchr(line, '}'))
+					break;
+
+				if (strstr(line, "Camera"))
+				{
+					CameraParams cam;
+					bool read_pos = false, read_look = false, read_up = false;
+
+					while (fgets(line, kMaxLineLength, file))
+					{
+						if (read_pos && read_look && read_up)
+							break;
+
+						if (sscanf(line, " position %f %f %f", &cam.camera_eye.x, &cam.camera_eye.y, &cam.camera_eye.z) != 0)
+							read_pos = true;
+						if (sscanf(line, " look_at %f %f %f", &cam.camera_lookat.x, &cam.camera_lookat.y, &cam.camera_lookat.z) != 0)
+							read_look = true;
+						if (sscanf(line, " up %f %f %f", &cam.camera_up.x, &cam.camera_up.y, &cam.camera_up.z) != 0)
+							read_up = true;
+					}
+
+					scene->cameras.push_back(cam);
+				}
+			}
+
+			printf("Number of cameras for random scene permutation: %d \n", scene->cameras.size());
+		}
+
+
+		//--------------------------------------------
 		// Mesh
 
 		if (strstr(line, "mesh"))

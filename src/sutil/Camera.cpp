@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2016, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,103 +39,116 @@ using namespace optix;
 //------------------------------------------------------------------------------
 //
 // Compute derived uvw frame and write to OptiX context
-void sutil::Camera::apply( )
+void sutil::Camera::apply()
 {
-    const float aspect_ratio = static_cast<float>(m_width) /
-        static_cast<float>(m_height);
+	const float aspect_ratio = static_cast<float>(m_width) /
+		static_cast<float>(m_height);
 
-    float3 camera_w;
-    sutil::calculateCameraVariables(
+	float3 camera_w;
+	sutil::calculateCameraVariables(
 		m_camera_eye, m_camera_lookat, m_camera_up, m_vfov, aspect_ratio,
-		m_camera_u, m_camera_v, camera_w, /*fov_is_vertical*/ true );
+		m_camera_u, m_camera_v, camera_w, /*fov_is_vertical*/ true);
 
-    const Matrix4x4 frame = Matrix4x4::fromBasis(
-            normalize( m_camera_u ),
-            normalize( m_camera_v ),
-            normalize( -camera_w ),
-            m_camera_lookat);
-    const Matrix4x4 frame_inv = frame.inverse();
-    // Apply camera rotation twice to match old SDK behavior
-    const Matrix4x4 trans   = frame*m_camera_rotate*m_camera_rotate*frame_inv;
+	const Matrix4x4 frame = Matrix4x4::fromBasis(
+		normalize(m_camera_u),
+		normalize(m_camera_v),
+		normalize(-camera_w),
+		m_camera_lookat);
+	const Matrix4x4 frame_inv = frame.inverse();
+	// Apply camera rotation twice to match old SDK behavior
+	const Matrix4x4 trans = frame*m_camera_rotate*m_camera_rotate*frame_inv;
 
-    m_camera_eye    = make_float3( trans*make_float4( m_camera_eye,    1.0f ) );
-    m_camera_lookat = make_float3( trans*make_float4( m_camera_lookat, 1.0f ) );
-    m_camera_up     = make_float3( trans*make_float4( m_camera_up,     0.0f ) );
+	m_camera_eye = make_float3(trans*make_float4(m_camera_eye, 1.0f));
+	m_camera_lookat = make_float3(trans*make_float4(m_camera_lookat, 1.0f));
+	m_camera_up = make_float3(trans*make_float4(m_camera_up, 0.0f));
 
-    sutil::calculateCameraVariables(
+	sutil::calculateCameraVariables(
 		m_camera_eye, m_camera_lookat, m_camera_up, m_vfov, aspect_ratio,
-		m_camera_u, m_camera_v, camera_w, true );
+		m_camera_u, m_camera_v, camera_w, true);
 
-    m_camera_rotate = Matrix4x4::identity();
+	m_camera_rotate = Matrix4x4::identity();
 
-    // Write variables to OptiX context
-    m_variable_eye->setFloat( m_camera_eye );
-    m_variable_u->setFloat( m_camera_u );
-    m_variable_v->setFloat( m_camera_v );
-    m_variable_w->setFloat( camera_w );
+	// Write variables to OptiX context
+	m_variable_eye->setFloat(m_camera_eye);
+	m_variable_u->setFloat(m_camera_u);
+	m_variable_v->setFloat(m_camera_v);
+	m_variable_w->setFloat(camera_w);
 }
 
 void sutil::Camera::reset_lookat()
 {
-    const float3 translation = m_save_camera_lookat - m_camera_lookat;
-    m_camera_eye += translation;
-    m_camera_lookat = m_save_camera_lookat;
-    apply();
+	const float3 translation = m_save_camera_lookat - m_camera_lookat;
+	m_camera_eye += translation;
+	m_camera_lookat = m_save_camera_lookat;
+	apply();
 }
 
-bool sutil::Camera::process_mouse( float x, float y, bool left_button_down, bool right_button_down, bool middle_button_down )
+bool sutil::Camera::process_mouse(float x, float y, bool left_button_down, bool right_button_down, bool middle_button_down)
 {
-    static sutil::Arcball arcball;
-    static float2 mouse_prev_pos = make_float2( 0.0f, 0.0f );
-    static bool   have_mouse_prev_pos = false;
+	static sutil::Arcball arcball;
+	static float2 mouse_prev_pos = make_float2(0.0f, 0.0f);
+	static bool   have_mouse_prev_pos = false;
 
-    // No action if mouse did not move
-    if ( mouse_prev_pos.x == x && mouse_prev_pos.y == y ) return false;
+	// No action if mouse did not move
+	if (mouse_prev_pos.x == x && mouse_prev_pos.y == y) return false;
 
-    bool dirty = false;
+	bool dirty = false;
 
-    if ( left_button_down || right_button_down || middle_button_down ) {
-        if ( have_mouse_prev_pos ) {
-            if ( left_button_down ) {
+	if (left_button_down || right_button_down || middle_button_down) {
+		if (have_mouse_prev_pos) {
+			if (left_button_down) {
 
-                const float2 from = { mouse_prev_pos.x, mouse_prev_pos.y };
-                const float2 to   = { x, y };
+				const float2 from = { mouse_prev_pos.x, mouse_prev_pos.y };
+				const float2 to = { x, y };
 
-                const float2 a = { from.x / m_width, from.y / m_height };
-                const float2 b = { to.x   / m_width, to.y   / m_height };
+				if (fabsf(from.x / m_width - to.x / m_width) > fabsf(from.y / m_height - to.y / m_height))
+				{
+					const float2 a = { from.x / m_width, from.y / m_height };
+					const float2 b = { to.x / m_width, from.y / m_height };
 
-                m_camera_rotate = arcball.rotate( b, a );
+					m_camera_rotate = arcball.rotate(b, a);
+				}
+				else
+				{
+					const float2 a = { from.x / m_width, from.y / m_height };
+					const float2 b = { from.x / m_width, to.y / m_height };
 
-            } else if ( right_button_down ) {
-                const float dx = ( x - mouse_prev_pos.x ) / m_width;
-                const float dy = ( y - mouse_prev_pos.y ) / m_height;
-                const float dmax = fabsf( dx ) > fabs( dy ) ? dx : dy;
-                const float scale = fminf( dmax, 0.9f );
+					m_camera_rotate = arcball.rotate(b, a);
+				}
+			}
+			else if (right_button_down) {
+				const float dx = (x - mouse_prev_pos.x) / m_width;
+				const float dy = (y - mouse_prev_pos.y) / m_height;
+				const float dmax = fabsf(dx) > fabs(dy) ? dx : dy;
+				const float scale = fminf(dmax, 0.9f);
 
-                m_camera_eye = m_camera_eye + (m_camera_lookat - m_camera_eye)*scale;
+				const float3 eye_prev(m_camera_eye);
+				m_camera_eye = eye_prev + (m_camera_lookat - eye_prev)*scale*10.0f;
+				m_camera_lookat = m_camera_lookat + (m_camera_lookat - eye_prev)*scale*10.0f;
 
-            } else if ( middle_button_down ) {
-                const float dx = ( x - mouse_prev_pos.x ) / m_width;
-                const float dy = ( y - mouse_prev_pos.y ) / m_height;
+			}
+			else if (middle_button_down) {
+				const float dx = 40.0f * (x - mouse_prev_pos.x) / m_width;
+				const float dy = 40.0f * (y - mouse_prev_pos.y) / m_height;
 
-                float3 translation = -dx*m_camera_u + dy*m_camera_v;
-                m_camera_eye    = m_camera_eye + translation;
-                m_camera_lookat = m_camera_lookat + translation;
-            }
+				float3 translation = -dx*m_camera_u + dy*m_camera_v;
+				m_camera_eye = m_camera_eye + translation;
+				m_camera_lookat = m_camera_lookat + translation;
+			}
 
-            apply();
-            dirty = true;
+			apply();
+			dirty = true;
+		}
 
-        }
+		have_mouse_prev_pos = true;
+		mouse_prev_pos.x = x;
+		mouse_prev_pos.y = y;
 
-        have_mouse_prev_pos = true;
-        mouse_prev_pos.x = x;
-        mouse_prev_pos.y = y;
+	}
+	else {
+		have_mouse_prev_pos = false;
+	}
 
-    } else {
-        have_mouse_prev_pos = false;
-    }
-
-    return dirty;
+	return dirty;
 }
 
