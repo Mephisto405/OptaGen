@@ -19,6 +19,7 @@ parser.add_argument('--mspp', type=int, required=False, default=1024, help='maxi
 parser.add_argument('--roc', type=float, required=False, default=0.9, help='if the `rate of change` of relMSE is higher than this value, stop rendering the reference image.')
 parser.add_argument('--ckp_s', type=str, required=False, default="", help='start from this scene (e.g., bedroom).')
 parser.add_argument('--ckp_i', type=int, required=False, default=0, help='start from this index (e.g., bedroom_<ckp_i>.npy, bedroom_<ckp_i + 1>.npy, ...).')
+parser.add_argument('--device', type=int, required=False, default=0)
 args = parser.parse_args()
 
 assert os.path.isfile(args.exe), 'EXE is not a valid executable file.'
@@ -88,7 +89,8 @@ for scene in scenes:
             '-m', str(args.mspp),
             '-r', str(args.roc),
             '-w', "1280",
-            '-v', "0"
+            '-v', "0",
+            '--device', str(args.device)
         ]
     
     i += 1
