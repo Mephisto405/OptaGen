@@ -133,19 +133,25 @@ RT_PROGRAM void pinhole_camera()
 	float3 result = make_float3(0.0f);
 
 	PathFeature pf{
-		{ optix::make_float3(0.f) },
-		{ DIFF },
-		{ 0.0f }
+		{ optix::make_float3(0.f) }, { DIFF }, { 0.0f }, // multi-bounce features
+		make_float3(0.f), make_float3(0.f), make_float3(0.f), 0.0f// first-bounce features
 	};
 
 	// Main render loop. This is not recursive, and for high ray depths
 	// will generally perform better than tracing radiance rays recursively
 	// in closest hit programs.
-	//printf("here1\n");
 	for (;;) {
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon);
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
+
+		if (prd.depth == 0)
+		{
+			pf.albedo = clip(prd.albedo);
+			pf.normal = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
+				prd.normal :
+				0.5f * normalize(prd.normal) + 0.5f;
+		}
 
 		if (prd.done)
 			break;
@@ -172,6 +178,7 @@ RT_PROGRAM void pinhole_camera()
 		ray_direction = prd.bsdfDir;
 	}
 
+	pf.radiance = prd.radiance;
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];

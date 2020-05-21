@@ -21,15 +21,24 @@ struct pathFeatures6
 // multi-bounce path feature
 struct PathFeature
 {
-	optix::float3 throughput[6]; // estimate에서 p(x)와 L(.)를 제외한 나머지?
-	float tag[6]; // BrdfType or diffuse/reflection/ 등 광현상에 관한 tag
-	float roughness[6]; // roughness of brdf
+	// for manifold learning phase
+	optix::float3 throughput[6];
+	float tag[6];
+	float roughness[6];
+
+	// for denoising phase
+	optix::float3 radiance;
+	optix::float3 albedo;
+	optix::float3 normal;
 
 	// Manual padding to float4 alignment.
 	// CUDA L1 cache - 32 bytes unit
 	// CUDA L2 cache - 128 bytes unit
-	float unsused0;
-	float unsused1;
+	float unused0;
+	float unused1;
+	float unused2;
+	float unused3;
+	float unused4;
 };
 
 //

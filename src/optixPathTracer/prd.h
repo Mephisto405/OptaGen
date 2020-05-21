@@ -48,7 +48,7 @@ struct PerRayData_radiance
   float pdf;
 
   // per-vertex cache for PathFeature
-  optix::float3 thpt_at_vtx;
+  optix::float3 thpt_at_vtx, albedo, normal;
   InteractionType tag;
   float roughness;
 };

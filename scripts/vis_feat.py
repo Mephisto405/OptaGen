@@ -26,17 +26,20 @@ args = parser.parse_args()
 filename = args.npy
 arr = np.load(filename)
 
-if len(arr.shape) == 4 and arr.shape[3] == 32:
+if len(arr.shape) == 4 and arr.shape[3] == 44:
     print("PathFeature")
     throughput = arr[:,:,:,:18]
     tag = arr[:,:,:,18:24]
     roughness = arr[:,:,:,24:30]
+    radiance = arr[:,:,:,30:33]
+    albedo = arr[:,:,:,33:36]
+    normal = arr[:,:,:,36:39]
     im = np.mean(throughput[:,:,:,0:3], 2)
     print(np.max(im))
     roughness /= np.max(roughness)
 
     for i in range(1,7,1):
-        plt.subplot(3,6,i)
+        plt.subplot(4,6,i)
         if (i == 1):
             plt.title('Throughput')
         thpt = np.mean(throughput[:,:,:,3*(i-1):3*i], 2)
@@ -44,16 +47,28 @@ if len(arr.shape) == 4 and arr.shape[3] == 32:
         plt.imshow(np.clip(thpt, 0.0, 1.0))
 
     for i in range(7,13,1):
-        plt.subplot(3,6,i)
+        plt.subplot(4,6,i)
         if (i == 7):
             plt.title('Tag (Diff,Glos,Spec,Relf,Tran)')
         plt.imshow(np.mean(tag[:,:,:,(i-7)], 2), cmap='magma')
     
     for i in range(13,19,1):
-        plt.subplot(3,6,i)
+        plt.subplot(4,6,i)
         if (i == 13):
             plt.title('Roughness')
         plt.imshow(np.mean(roughness[:,:,:,(i-13)], 2), cmap='magma')
+
+    plt.subplot(4,6,19)
+    plt.title('Radiance')
+    plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
+
+    plt.subplot(4,6,20)
+    plt.title('Albedo')
+    plt.imshow(np.mean(albedo, 2))
+    
+    plt.subplot(4,6,21)
+    plt.title('Normal')
+    plt.imshow(np.mean(normal, 2))
 
     plt.show()
 

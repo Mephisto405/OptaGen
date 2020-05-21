@@ -75,7 +75,7 @@
 
 using namespace optix;
 
-const char* const SAMPLE_NAME = "optixPathTracer";
+const char* const SAMPLE_NAME = "OptaGen";
 std::string SAVE_DIR = "";
 
 const int NUMBER_OF_BRDF_INDICES = 4;
@@ -617,14 +617,15 @@ sutil::Camera setRandomCameraParams(const optix::Aabb aabb, std::string aabb_txt
 				);
 		}
 
-		camera_up = optix::make_float3(
-			randFloat(-0.5f, 0.5f),
-			randFloat(-0.5f, 0.5f),
-			randFloat(-0.5f, 0.5f));
 	}
 
+	camera_up = optix::make_float3(
+		randFloat(-0.5f, 0.5f),
+		randFloat(-0.5f, 0.5f),
+		randFloat(-0.5f, 0.5f));
+
 	sutil::Camera camera(
-		scene->properties.width, scene->properties.height, randFloat(60.f, 80.f),
+		scene->properties.width, scene->properties.height, scene->properties.vfov * randFloat(0.8f, 1.2f),
 		&camera_eye.x, &camera_lookat.x, &camera_up.x,
 		context["eye"], context["U"], context["V"], context["W"]);
 

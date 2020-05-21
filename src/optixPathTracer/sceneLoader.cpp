@@ -65,7 +65,7 @@ Scene* LoadScene(const char* filename)
 		//--------------------------------------------
 		// Material
 
-		if (sscanf(line, " material %s", name) == 1)
+		if (sscanf(line, "material %s", name) == 1)
 		{
 			printf("%s", line);
 
@@ -277,15 +277,15 @@ Scene* LoadScene(const char* filename)
 
 					while (fgets(line, kMaxLineLength, file))
 					{
-						if (read_pos && read_look && read_up)
-							break;
-
 						if (sscanf(line, " position %f %f %f", &cam.camera_eye.x, &cam.camera_eye.y, &cam.camera_eye.z) != 0)
 							read_pos = true;
 						if (sscanf(line, " look_at %f %f %f", &cam.camera_lookat.x, &cam.camera_lookat.y, &cam.camera_lookat.z) != 0)
 							read_look = true;
 						if (sscanf(line, " up %f %f %f", &cam.camera_up.x, &cam.camera_up.y, &cam.camera_up.z) != 0)
 							read_up = true;
+
+						if (read_pos && read_look && read_up)
+							break;
 					}
 
 					scene->cameras.push_back(cam);

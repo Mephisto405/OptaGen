@@ -78,7 +78,9 @@ RT_PROGRAM void closest_hit()
 	LightParameter light = sysLightParameters[lightMaterialId];
 	float cosTheta;
 	if (light.lightType == QUAD)
+	{
 		cosTheta = dot(-ray.direction, light.normal);
+	}
 	else if (light.lightType == SPHERE)
 	{
 		const float3 lightNormal = normalize(front_hit_point - light.position);
@@ -97,6 +99,14 @@ RT_PROGRAM void closest_hit()
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
 		}
+
+		prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
+		prd.normal = ffnormal;
+	}
+	else
+	{
+		prd.albedo = make_float3(0.f);
+		prd.normal = ffnormal;
 	}
 
 	prd.done = true;

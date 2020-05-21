@@ -36,6 +36,7 @@
 #include "material_parameters.h"
 #include "light_parameters.h"
 #include "state.h"
+#include <assert.h>
 
 using namespace optix;
 
@@ -138,6 +139,9 @@ RT_PROGRAM void closest_hit()
 	sysBRDFSample[mat.brdf](mat, state, prd);
 	sysBRDFPdf[mat.brdf](mat, state, prd);
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
+
+	prd.albedo = mat.color; 
+	prd.normal = ffnormal;
 
 	if (prd.pdf > 0.0f)
 		prd.throughput *= f / prd.pdf;
