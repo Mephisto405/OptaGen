@@ -201,10 +201,30 @@ void destroyContext()
 }
 
 
-void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames)
+void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames, int deviceID = 0)
 {
 	// Set up context
 	context = Context::create();
+
+	// Multi-GPU support
+	const std::vector<int> enabled_devices = context->getEnabledDevices();
+	if (enabled_devices.size() == 0) {
+		throw "No OptiX-enabled devices";
+	}
+	else if (enabled_devices.size() <= deviceID)
+	{
+		throw "No such device found : " + deviceID;
+	}
+	else
+	{
+		std::cerr << "OptiX-enabled devices: " << enabled_devices.size() << " GPU(s)" << std::endl;
+	}
+
+	if (deviceID == 0)
+		context->setDevices(enabled_devices.begin(), ++enabled_devices.begin());
+	else if (deviceID == 1)
+		context->setDevices(++enabled_devices.begin(), enabled_devices.end());
+	
 	context->setRayTypeCount(2);
 	context->setEntryPointCount(1);
 
@@ -1046,6 +1066,7 @@ void printUsageAndExit()
 		"  -m | --mspp MSPP      maximum number of sample per pixel to render the reference image (default: 64) \n"
 		"  -r | --roc ROC        if the `rate of change` of relMSE is higher than this value, stop rendering the reference image (default: 0.9) \n"
 		"  -w | --width WIDTH    image width and height for training data processing (optional) \n"
+		"       --device DEVICE  device ID \n"
 		"  -v | --visual VISUAL  visual mode (default: 0, 0: off, 1: on) \n"
 		"\n"
 		"app keystrokes:\n"
@@ -1137,7 +1158,7 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int 
 
 int main(int argc, char** argv)
 {
-	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 64, width = 0, ckp = 0;
+	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 64, width = 0, ckp = 0, deviceID = 0;
 	float rate_of_change = 0.9;
 	std::string scene_file = "", hdrs_home = "", in_file = "", out_file = "";
 	bool visual = false;
@@ -1354,6 +1375,28 @@ int main(int argc, char** argv)
 				printUsageAndExit();
 			}
 		}
+		else if (arg == "--device")
+		{
+			if (i == argc - 1 || (std::find(opts.begin(), opts.end(), argv[i + 1]) != opts.end()))
+			{
+				std::cerr << "Option '" << arg << "' requires additional argument.\n";
+				printUsageAndExit();
+			}
+			
+			try
+			{
+				deviceID = std::stoi(argv[++i]);
+				if (deviceID < 0)
+				{
+					throw std::exception();
+				}
+			}
+			catch (std::exception const &e)
+			{
+				std::cerr << "Option '" << arg << "' should be a non-negative interger value.\n";
+				printUsageAndExit();
+			}
+		}
 		else if (arg == "-v" || arg == "--visual")
 		{
 			if (i == argc - 1 || (std::find(opts.begin(), opts.end(), argv[i + 1]) != opts.end()))
@@ -1427,7 +1470,7 @@ int main(int argc, char** argv)
 
 		ilInit();
 
-		createContext(use_pbo, scene->properties.max_depth, num_of_frames);
+		createContext(use_pbo, scene->properties.max_depth, num_of_frames, deviceID);
 
 		// Load textures
 		for (int i = 0; i < scene->texture_map.size(); i++)
