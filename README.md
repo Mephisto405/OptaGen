@@ -10,7 +10,7 @@ The code and document are not polished yet. I will continue to update the code t
 
 ## Rendering Resources for OptiX
 
-[This Google Drive link](https://drive.google.com/open?id=1FKiPY7VtGvwdirNgEH6yYpHk_kPlnybE) offers 25 different 3D scenes and 30 HDRIs. Most of these scenes were made by artists on [Blend Swap](https://blendswap.com/). Then they were cleaned up by [Benedikt Bitterli](https://benedikt-bitterli.me/resources/). On top of that, I massaged some geometries, textures, and OBJ so that the scenes are compatible with the [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
+[Our laboratory repository](https://sgvrdata.kaist.ac.kr:5051/sharing/Xx5VZ41dv) offers 25 different 3D scenes and 30 HDRIs. Most of these scenes were made by artists on [Blend Swap](https://blendswap.com/). Then they were cleaned up by [Benedikt Bitterli](https://benedikt-bitterli.me/resources/). On top of that, I massaged some geometries, textures, and OBJ so that the scenes are compatible with the [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
 
 ## How-to-Build
 
