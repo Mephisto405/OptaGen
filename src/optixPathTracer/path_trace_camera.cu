@@ -134,7 +134,8 @@ RT_PROGRAM void pinhole_camera()
 
 	PathFeature pf{
 		{ optix::make_float3(0.f) }, { DIFF }, { 0.0f }, // multi-bounce features
-		make_float3(0.f), make_float3(0.f), make_float3(0.f), 0.0f// first-bounce features
+		make_float3(0.f), make_float3(0.f), make_float3(0.f), // first-bounce features
+		1.0f, // MC probability
 	};
 
 	// Main render loop. This is not recursive, and for high ray depths
@@ -157,6 +158,7 @@ RT_PROGRAM void pinhole_camera()
 			break;
 
 		/* Path features */
+		pf.prob *= prd.pdf;
 		if (prd.depth < 6)
 		{
 			pf.throughput[prd.depth] = prd.thpt_at_vtx;

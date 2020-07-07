@@ -31,14 +31,8 @@ struct PathFeature
 	optix::float3 albedo;
 	optix::float3 normal;
 
-	// Manual padding to float4 alignment.
-	// CUDA L1 cache - 32 bytes unit
-	// CUDA L2 cache - 128 bytes unit
-	float unused0;
-	float unused1;
-	float unused2;
-	float unused3;
-	float unused4;
+	// MC probability
+	float prob;
 };
 
 //

@@ -68,9 +68,10 @@ print('[] Number of HDRIs: {}'.format(len(hdrs))); print('')
 ##
 # Rendering
 print('[] Rendering start...')
-#SCENES = ['coffee', 'living-room-2', 'living-room-3', 'staircase']
-#NUMS = [5, 10, 15, 15]
+#SCENES = ['staircase-2']
+#NUMS = [8]
 i = 0
+print(scenes)
 for scene in scenes:
     #if scene.split("\\")[-2] not in SCENES:
     #    continue

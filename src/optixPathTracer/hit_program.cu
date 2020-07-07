@@ -144,9 +144,13 @@ RT_PROGRAM void closest_hit()
 	prd.normal = ffnormal;
 
 	if (prd.pdf > 0.0f)
+	{
 		prd.throughput *= f / prd.pdf;
+	}
 	else
+	{
 		prd.done = true;
+	}
 }
 
 
