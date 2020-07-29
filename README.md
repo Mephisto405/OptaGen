@@ -10,7 +10,13 @@ The code and document are not polished yet. I will continue to update the code t
 
 ## Rendering Resources for OptiX
 
-[Our laboratory repository](https://sgvrdata.kaist.ac.kr:5051/sharing/Xx5VZ41dv) offers 25 different 3D scenes and 30 HDRIs. Most of these scenes were made by artists on [Blend Swap](https://blendswap.com/). Then they were cleaned up by [Benedikt Bitterli](https://benedikt-bitterli.me/resources/). On top of that, I massaged some geometries, textures, and OBJ so that the scenes are compatible with the [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
+Our lab repository offers 25 different 3D scenes and 30 HDRIs. Most of these scenes were made by artists on [Blend Swap](https://blendswap.com/). Then they were cleaned up by [Benedikt Bitterli](https://benedikt-bitterli.me/resources/). On top of that, I massaged some geometries, textures, and OBJ so that the scenes are compatible with the [Optix-based renderer](https://github.com/knightcrawler25/Optix-PathTracer).
+
+[Train/Validation data](https://sgvrdata.kaist.ac.kr:5051/sharing/R7YGGNXk9)
+[Test data](https://sgvrdata.kaist.ac.kr:5051/sharing/ylMfjlWQb)
+[Origins of our test data](https://sgvrdata.kaist.ac.kr:5051/sharing/E90CDs0ib)
+[HDRIs](https://sgvrdata.kaist.ac.kr:5051/sharing/uDlyKacfT)
+
 
 ## How-to-Build
 
@@ -24,7 +30,8 @@ Please take a look at the main [data generator code](./scripts/optagen.py) and t
 
 ### Data Configurations
 
-25 scenes = 15 outdoor + 10 indoor = 18 training + 7 test
+24 scenes = 15 outdoor + 9 indoor = 17 training + 7 test
+
 30 HDRIs = 10 city theme outdoor + 10 nature theme outdoor + 10 indoor
 
 ## Features 
