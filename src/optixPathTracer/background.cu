@@ -67,7 +67,6 @@ RT_PROGRAM void miss()
 {
 	if (option == 0)
 	{
-		prd.radiance = make_float3(0.f);
 		prd.albedo = make_float3(0.f);
 		prd.normal = make_float3(0.f);
 

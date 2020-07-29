@@ -191,6 +191,9 @@ RT_PROGRAM void pinhole_camera()
 		acc_val = make_float4(result, 0.f);
 	}
 
+	//float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));
+	//float4 val = LinearToSrgb(acc_val);
+
 	output_buffer[launch_index] = acc_val; // uint
 	accum_buffer[launch_index] = acc_val;
 	if (frame < mbpf_frames)
