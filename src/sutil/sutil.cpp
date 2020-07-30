@@ -464,9 +464,9 @@ void sutil::writeBufferToFile( const char* filename, RTbuffer buffer)
                 unsigned char *dst = &pix[0] + (3*width*(height-1-j));
                 unsigned char *src = ((unsigned char*)imageData) + (4*width*j);
                 for(int i = 0; i < width; i++) {
-                    *dst++ = *(src + 2);
-                    *dst++ = *(src + 1);
-                    *dst++ = *(src + 0);
+                    *dst++ = powf(*(src + 2), 0.45f);
+                    *dst++ = powf(*(src + 1), 0.45f);
+                    *dst++ = powf(*(src + 0), 0.45f);
                     src += 4;
                 }
             }
@@ -478,7 +478,7 @@ void sutil::writeBufferToFile( const char* filename, RTbuffer buffer)
                 unsigned char *dst = &pix[0] + width*(height-1-j);
                 float* src = ((float*)imageData) + (3*width*j);
                 for(int i = 0; i < width; i++) {
-                    int P = static_cast<int>((*src++) * 255.0f);
+					int P = static_cast<int>(powf(*src++, 0.45f) * 255.0f);
                     unsigned int Clamped = P < 0 ? 0 : P > 0xff ? 0xff : P;
 
                     // write the pixel to all 3 channels
@@ -496,7 +496,7 @@ void sutil::writeBufferToFile( const char* filename, RTbuffer buffer)
                 float* src = ((float*)imageData) + (3*width*j);
                 for(int i = 0; i < width; i++) {
                     for(int elem = 0; elem < 3; ++elem) {
-                        int P = static_cast<int>((*src++) * 255.0f);
+						int P = static_cast<int>(powf(*src++, 0.45f) * 255.0f);
                         unsigned int Clamped = P < 0 ? 0 : P > 0xff ? 0xff : P;
                         *dst++ = static_cast<unsigned char>(Clamped);
                     }
@@ -511,7 +511,7 @@ void sutil::writeBufferToFile( const char* filename, RTbuffer buffer)
                 float* src = ((float*)imageData) + (4*width*j);
                 for(int i = 0; i < width; i++) {
                     for(int elem = 0; elem < 3; ++elem) {
-                        int P = static_cast<int>((*src++) * 255.0f);
+						int P = static_cast<int>(powf(*src++, 0.45f) * 255.0f);
                         unsigned int Clamped = P < 0 ? 0 : P > 0xff ? 0xff : P;
                         *dst++ = static_cast<unsigned char>(Clamped);
                     }
