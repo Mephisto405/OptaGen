@@ -89,7 +89,7 @@ for scene in scenes:
             '-p', str(args.spp),
             '-m', str(args.mspp),
             '-r', str(args.roc),
-            '-w', "1280",
+            '-w', "640",
             '-v', "0",
             '--device', str(args.device)
         ]
