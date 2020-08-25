@@ -141,18 +141,14 @@ RT_PROGRAM void pinhole_camera()
 
 		// record sample data
 		sr.path_weight *= prd.pdf;
-		if (prd.depth < 6)
-		{
-			sr.throughputs[prd.depth] = prd.thpt_at_vtx;
-			sr.bounce_types[prd.depth] = (float)prd.tag;
-			sr.roughnesses[prd.depth] = prd.roughness;
-		}
-		else
-		{
-			sr.throughputs[5] *= prd.thpt_at_vtx;
-		}
+		sr.radiance_wo_weight *= prd.thpt_at_vtx;
+		//sr.light_intensity = ;
 
-		if (prd.done || prd.depth >= MAX_DEPTH) // max_depth
+		sr.throughputs[prd.depth] = prd.thpt_at_vtx;
+		sr.bounce_types[prd.depth] = (float)prd.tag;
+		sr.roughnesses[prd.depth] = prd.roughness;
+
+		if (prd.done || prd.depth >= MAX_DEPTH) // >= max_depth
 			break;
 
 		prd.depth++;
