@@ -17,7 +17,6 @@ struct SampleRecord
 	/* SMBC features */	
 	// local features
 	float subpixel_x, subpixel_y;
-	float lens_u, lens_v;
 	optix::float3 radiance;
 	optix::float3 radiance_diffuse;
 	optix::float3 albedo_at_first; // at the first geometric bounce

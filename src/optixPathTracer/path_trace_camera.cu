@@ -100,7 +100,9 @@ RT_PROGRAM void pinhole_camera()
 	size_t2 screen = output_buffer.size();
 	unsigned int seed = tea<16>(screen.x*launch_index.y + launch_index.x, frame + curr_time);
 
-	float2 subpixel_jitter = frame == 0 ? make_float2(0.0f) : make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
+	float subpixel_x = frame == 0 ? 0.5f : rnd(seed);
+	float subpixel_y = frame == 0 ? 0.5f : rnd(seed);
+	float2 subpixel_jitter = make_float2(subpixel_x - 0.5f, subpixel_y - 0.5f);
 	float2 d = (make_float2(launch_index) + subpixel_jitter) / make_float2(screen) * 2.f - 1.f;
 	float3 ray_origin = eye;
 	float3 ray_direction = normalize(d.x*U + d.y*V + W);
@@ -114,6 +116,8 @@ RT_PROGRAM void pinhole_camera()
 
 	// sample records
 	SampleRecord sr = {};
+	sr.subpixel_x = subpixel_x;
+	sr.subpixel_y = subpixel_y;
 
 
 	/* Main rendering loop */
@@ -148,7 +152,7 @@ RT_PROGRAM void pinhole_camera()
 			sr.throughputs[5] *= prd.thpt_at_vtx;
 		}
 
-		if (prd.done || prd.depth >= max_depth)
+		if (prd.done || prd.depth >= MAX_DEPTH) // max_depth
 			break;
 
 		prd.depth++;
