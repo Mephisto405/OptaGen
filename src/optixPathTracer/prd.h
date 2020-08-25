@@ -29,7 +29,7 @@
 #pragma once
 
 #include <optixu/optixu_vector_types.h>
-#include "path.h"
+#include "samplerecord.h"
 
 struct PerRayData_radiance
 {

@@ -52,7 +52,7 @@
 #include "light_parameters.h"
 #include "material_parameters.h"
 #include "properties.h"
-#include "path.h"
+#include "samplerecord.h"
 #include <IL/il.h>
 #include <Camera.h>
 #include <OptiXMesh.h>
@@ -67,7 +67,7 @@
 #include <dirent.h>
 #include <stdint.h>
 
-#include "cnpy.h"
+#include <cnpy.h>
 
 #define M_REF 0
 #define M_FET 1

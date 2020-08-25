@@ -30,14 +30,14 @@
 #include <optixu/optixu_math_namespace.h>
 #include "helpers.h"
 #include "prd.h"
-#include "path.h"
+#include "samplerecord.h"
+#include "configs.h"
 #include "rt_function.h"
 #include "random.h"
 #include <assert.h>
 #include <stdio.h>
 
 using namespace optix;
-
 
 rtDeclareVariable(float3, eye, , );
 rtDeclareVariable(float3, U, , );
@@ -48,7 +48,7 @@ rtDeclareVariable(float, scene_epsilon, , );
 rtDeclareVariable(float3, cutoff_color, , );
 rtDeclareVariable(int, max_depth, , );
 rtBuffer<float4, 2>              output_buffer;
-rtBuffer<PathFeature[4], 2>      mbpf_buffer; /* Multiple-bounced feature buffer */
+rtBuffer<SampleRecord[MAX_SAMPLES], 2>      mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
 rtDeclareVariable(rtObject, top_object, , );
 rtDeclareVariable(unsigned int, frame, , );
@@ -96,60 +96,38 @@ __device__ inline float3 clip(const float3& c)
 
 RT_PROGRAM void pinhole_camera()
 {
+	/* Sub-pixel jittering */
 	size_t2 screen = output_buffer.size();
 	unsigned int seed = tea<16>(screen.x*launch_index.y + launch_index.x, frame + curr_time);
 
-	// Subpixel jitter: send the ray through a different position inside the pixel each time,
-	// to provide antialiasing.
 	float2 subpixel_jitter = frame == 0 ? make_float2(0.0f) : make_float2(rnd(seed) - 0.5f, rnd(seed) - 0.5f);
-
 	float2 d = (make_float2(launch_index) + subpixel_jitter) / make_float2(screen) * 2.f - 1.f;
 	float3 ray_origin = eye;
 	float3 ray_direction = normalize(d.x*U + d.y*V + W);
 
-	PerRayData_radiance prd;
-	prd.depth = 0;
+
+	/* Records */
+	// ray records
+	PerRayData_radiance prd = {};
 	prd.seed = seed;
-	prd.done = false;
-	prd.pdf = 0.0f;
-	prd.specularBounce = false;
-	prd.thpt_at_vtx = make_float3(0.0f);
-	prd.tag = DIFF;
-	prd.roughness = 0.0f;
+	prd.throughput = make_float3(1.0f); // attenuation (<= 1) from the surface interaction.
+
+	// sample records
+	SampleRecord sr = {};
 
 
-	// These represent the current shading state and will be set by the closest-hit or miss program
-
-	// attenuation (<= 1) from surface interaction.
-	prd.throughput = make_float3(1.0f);
-
-	// light from a light source or miss program
-	prd.radiance = make_float3(0.0f);
-
-	// next ray to be traced
-	prd.origin = make_float3(0.0f);
-	prd.bsdfDir = make_float3(0.0f);
-
+	/* Main rendering loop */
 	float3 result = make_float3(0.0f);
-
-	PathFeature pf{
-		{ optix::make_float3(0.f) }, { DIFF }, { 0.0f }, // multi-bounce features
-		make_float3(0.f), make_float3(0.f), make_float3(0.f), // first-bounce features
-		1.0f // MC probability
-	};
-
-	// Main render loop. This is not recursive, and for high ray depths
-	// will generally perform better than tracing radiance rays recursively
-	// in closest hit programs.
 	for (;;) {
 		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon);
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
 
+		// post-processing
 		if (prd.depth == 0)
 		{
-			pf.albedo = clip(prd.albedo);
-			pf.normal = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
+			sr.albedo = clip(prd.albedo);
+			sr.normal = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
 				prd.normal :
 				0.5f * normalize(prd.normal) + 0.5f;
 		}
@@ -157,17 +135,17 @@ RT_PROGRAM void pinhole_camera()
 		if (prd.done)
 			break;
 
-		/* Path features */
-		pf.prob *= prd.pdf;
+		// record sample data
+		sr.path_weight *= prd.pdf;
 		if (prd.depth < 6)
 		{
-			pf.throughput[prd.depth] = prd.thpt_at_vtx;
-			pf.tag[prd.depth] = (float)prd.tag;
-			pf.roughness[prd.depth] = prd.roughness;
+			sr.throughputs[prd.depth] = prd.thpt_at_vtx;
+			sr.bounce_types[prd.depth] = (float)prd.tag;
+			sr.roughnesses[prd.depth] = prd.roughness;
 		}
 		else
 		{
-			pf.throughput[5] *= prd.thpt_at_vtx;
+			sr.throughputs[5] *= prd.thpt_at_vtx;
 		}
 
 		if (prd.done || prd.depth >= max_depth)
@@ -175,12 +153,12 @@ RT_PROGRAM void pinhole_camera()
 
 		prd.depth++;
 
-		// Update ray data for the next path segment
+		// update ray data for the next path segment
 		ray_origin = prd.origin;
 		ray_direction = prd.bsdfDir;
 	}
 
-	pf.radiance = prd.radiance;
+	sr.radiance = prd.radiance;
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
@@ -197,7 +175,7 @@ RT_PROGRAM void pinhole_camera()
 	output_buffer[launch_index] = acc_val; // uint
 	accum_buffer[launch_index] = acc_val;
 	if (frame < mbpf_frames)
-		mbpf_buffer[launch_index][frame] = pf;
+		mbpf_buffer[launch_index][frame] = sr;
 }
 
 RT_PROGRAM void exception()

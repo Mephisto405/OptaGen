@@ -41,7 +41,7 @@ OPTIX_add_sample_executable( OptaGen
 	light_parameters.h
 	state.h
 	prd.h
-	path.h
+	samplerecord.h
 	rt_function.h
 	MyAssert.h
 	Picture.h

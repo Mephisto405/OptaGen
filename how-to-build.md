@@ -38,6 +38,7 @@
 	12-1. Open CNPY.sln.
 	12-2. Solution Explorer -> cnpy -> right click -> properties -> Configuration Properties -> C/C++ -> General
 	12-3. Copy the directory of external dependencies at Additional Include Directories.
+	
 	12-4. Open OptaGen.sln which was generated after step 9.
 	12-5. Solution Explorer -> OptaGen -> ... -> General -> Additional Include Directories 
 	12-6. Add the cnpy repository directory (e.g., C:\Users\username\cnpy) and the directory copied at step 12-3 on Additional Include Directories
