@@ -37,11 +37,9 @@ def main():
         normal = arr[:,:,:,36:39]
         prob = arr[:,:,:,39]
         prob = np.log(1 + np.log(1 + prob))
-        print(np.max(prob))
-        print(np.min(prob))
-        im = np.mean(throughput[:,:,:,0:3], 2)
         roughness /= np.max(roughness)
 
+        plt.figure(figsize=(20, 16))        
         for i in range(1,7,1):
             plt.subplot(4,6,i)
             if (i == 1):
@@ -76,8 +74,12 @@ def main():
         plt.show()
         #plt.savefig('./fig.png')
 
-        plt.figure()
-        plt.imshow(np.mean(prob, 2), cmap='magma', vmin=0.0, vmax=1.0)
+        plt.figure(figsize=(20, 20))
+        plt.imshow(np.mean(prob, 2), cmap='magma')
+        plt.show()
+
+        plt.figure(figsize=(20, 20))
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
         #plt.savefig('./fig2.png')
 
