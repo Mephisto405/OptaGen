@@ -67,7 +67,7 @@
 #include <dirent.h>
 #include <stdint.h>
 
-#include <cnpy.h>
+#include "cnpy.h"
 
 #define M_REF 0
 #define M_FET 1
@@ -251,8 +251,8 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	// Multiple-bounce path feature buffer
 	Buffer mbpf_buffer = context->createBuffer(RT_BUFFER_OUTPUT, RT_FORMAT_USER,
 		scene->properties.width, scene->properties.height);
-	mbpf_buffer->setElementSize(sizeof(PathFeature) * num_frames); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
-	std::cerr << "Size of path feature: " << sizeof(PathFeature) << " bytes" << std::endl;
+	mbpf_buffer->setElementSize(sizeof(SampleRecord) * num_frames); // a user-defined type whose size is specified with *@ref rtBufferSetElementSize.
+	std::cerr << "Size of path feature: " << sizeof(SampleRecord) << " bytes" << std::endl;
 	context["mbpf_buffer"]->set(mbpf_buffer);
 
 	// Accumulation buffer
