@@ -123,17 +123,15 @@ RT_PROGRAM void pinhole_camera()
 	/* Main rendering loop */
 	float3 result = make_float3(0.0f);
 	for (;;) {
-		optix::Ray ray(ray_origin, ray_direction, /*ray type*/ 0, scene_epsilon);
+		optix::Ray ray(ray_origin, ray_direction, 0 /*ray type*/, scene_epsilon);
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
 
 		// post-processing
 		if (prd.depth == 0)
 		{
-			sr.albedo = clip(prd.albedo);
-			sr.normal = (prd.normal.x == 0.f && prd.normal.y == 0.f && prd.normal.z == 0.f) ?
-				prd.normal :
-				0.5f * normalize(prd.normal) + 0.5f;
+			sr.albedo_at_first = prd.albedo;
+			sr.normal_at_first = prd.normal;
 		}
 
 		if (prd.done)

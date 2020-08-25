@@ -141,7 +141,7 @@ RT_PROGRAM void closest_hit()
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
 
 	prd.albedo = mat.color; 
-	prd.normal = ffnormal;
+	prd.normal = normalize(rtTransformNormal(RT_WORLD_TO_OBJECT, ffnormal)); // camera-space normal
 
 	if (prd.pdf > 0.0f)
 	{
