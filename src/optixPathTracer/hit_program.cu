@@ -37,6 +37,7 @@
 #include "light_parameters.h"
 #include "state.h"
 #include <assert.h>
+#include "configs.h"
 
 using namespace optix;
 
@@ -132,7 +133,7 @@ RT_PROGRAM void closest_hit()
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
 
 	// Direct light Sampling
-	if (!prd.specularBounce && prd.depth < max_depth)
+	if (!prd.specularBounce && prd.depth < MAX_DEPTH)
 		prd.radiance += DirectLight(mat, state);
 
 	// BRDF Sampling
@@ -142,6 +143,7 @@ RT_PROGRAM void closest_hit()
 
 	prd.albedo = mat.color; 
 	prd.normal = normalize(rtTransformNormal(RT_WORLD_TO_OBJECT, ffnormal)); // camera-space normal
+	prd.hasHit = true;
 
 	if (prd.pdf > 0.0f)
 	{

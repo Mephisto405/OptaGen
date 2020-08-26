@@ -65,14 +65,7 @@ __device__ inline float3 LinearToSrgb(const float3& c)
 
 RT_PROGRAM void miss()
 {
-	if (option == 0)
-	{
-		prd.albedo = make_float3(0.f);
-		prd.normal = make_float3(0.f);
-
-		prd.done = true;
-	}
-	else
+	if (option != 0)
 	{
 		const LightParameter light = sysLightParameters[sysNumberOfLights - 1];
 		assert(light.lightType == ENVMAP);
@@ -94,9 +87,11 @@ RT_PROGRAM void miss()
 		}
 
 		prd.radiance += misWeight * emission * prd.throughput;
-		prd.albedo = LinearToSrgb(ToneMap(emission, 1.5));
-		prd.normal = make_float3(0.f);
-
-		prd.done = true;
 	}
+
+	prd.albedo = make_float3(0.f);
+	prd.normal = make_float3(0.f);
+	prd.hasHit = false;
+
+	prd.done = true;
 }

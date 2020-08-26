@@ -53,6 +53,7 @@
 #include "material_parameters.h"
 #include "properties.h"
 #include "samplerecord.h"
+#include "configs.h"
 #include <IL/il.h>
 #include <Camera.h>
 #include <OptiXMesh.h>
@@ -1062,7 +1063,6 @@ void printUsageAndExit()
 		"  -o | --out OUT        base filename for output reference image (.npy) \n"
 		"  -n | --num NUM        number of patches to generate (default: 1)\n"
 		"  -c | --ckp CKP        start from this index (e.g., bedroom_<ckp_i>.npy, bedroom_<ckp_i + 1>.npy, ...) (default: 0) \n"
-		"  -p | --spp SPP        sample per pixel (default: 4) \n"
 		"  -m | --mspp MSPP      maximum number of sample per pixel to render the reference image (default: 64) \n"
 		"  -r | --roc ROC        if the `rate of change` of relMSE is higher than this value, stop rendering the reference image (default: 0.9) \n"
 		"  -w | --width WIDTH    image width and height for training data processing (optional) \n"
@@ -1158,7 +1158,7 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer, bool ref, int 
 
 int main(int argc, char** argv)
 {
-	int mode = 0, num_of_patches = 1, num_of_frames = 4, max_ref_frames = 64, width = 0, ckp = 0, deviceID = 0;
+	int mode = 0, num_of_patches = 1, num_of_frames = MAX_SAMPLES, max_ref_frames = 64, width = 0, ckp = 0, deviceID = 0;
 	float rate_of_change = 0.9;
 	std::string scene_file = "", hdrs_home = "", in_file = "", out_file = "";
 	bool visual = false;
@@ -1167,7 +1167,7 @@ int main(int argc, char** argv)
 	std::vector<std::string> opts = {
 		"-h", "--help", "-M", "--mode", "-s", "--scene",
 		"-d", "--hdr", "-i", "--in", "-o", "--out",
-		"-n", "--num", "-c", "--ckp", "-p", "--spp", "-m", "--mspp",
+		"-n", "--num", "-c", "--ckp", "-m", "--mspp",
 		"-r", "--roc", "-w", "--width", "-v", "--visual"
 	};
 
@@ -1284,28 +1284,6 @@ int main(int argc, char** argv)
 			catch (std::exception const &e)
 			{
 				std::cerr << "Option '" << arg << "' should be a non-negative integer value.\n";
-				printUsageAndExit();
-			}
-		}
-		else if (arg == "-p" || arg == "--spp")
-		{
-			if (i == argc - 1 || (std::find(opts.begin(), opts.end(), argv[i + 1]) != opts.end()))
-			{
-				std::cerr << "Option '" << arg << "' requires additional argument.\n";
-				printUsageAndExit();
-			}
-
-			try
-			{
-				num_of_frames = std::stoi(argv[++i]);
-				if (num_of_frames < 1)
-				{
-					throw std::exception();
-				}
-			}
-			catch (std::exception const &e)
-			{
-				std::cerr << "Option '" << arg << "' should be a positive integer value.\n";
 				printUsageAndExit();
 			}
 		}

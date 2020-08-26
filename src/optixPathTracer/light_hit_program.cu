@@ -100,14 +100,11 @@ RT_PROGRAM void closest_hit()
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
 		}
 
-		prd.albedo = LinearToSrgb(ToneMap(light.emission, 1.5));
-		prd.normal = ffnormal;
 	}
-	else
-	{
-		prd.albedo = make_float3(0.f);
-		prd.normal = ffnormal;
-	}
+
+	prd.albedo = make_float3(0.f);
+	prd.normal = ffnormal;
+	prd.hasHit = false;
 
 	prd.done = true;
 }

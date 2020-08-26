@@ -132,6 +132,7 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.albedo_at_first = prd.albedo;
 			sr.normal_at_first = prd.normal;
+			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
 		}
 
 		if (prd.done)
