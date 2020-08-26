@@ -90,8 +90,11 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 		{
 			PerRayData_shadow prdShadow;
 			prdShadow.inShadow = false;
+
 			Ray shadowRay = make_Ray(surfacePos, lightSample.direction, 1, scene_epsilon, lightSample.distance - scene_epsilon);
 			rtTrace(top_object, shadowRay, prdShadow);
+
+			prd.inShadow = prdShadow.inShadow;
 
 			if (!prdShadow.inShadow)
 			{
@@ -99,7 +102,11 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 				L = misWeight * prd.throughput * f * lightSample.emission / max(1e-3f, lightSample.pdf);
 			}
 		}
+		else
+			prd.inShadow = true;
 	}
+	else
+		prd.inShadow = true;
 
 	return L;
 }
@@ -133,8 +140,9 @@ RT_PROGRAM void closest_hit()
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
 
 	// Direct light Sampling
+	optix::float3 direct_radiance = DirectLight(mat, state);
 	if (!prd.specularBounce && prd.depth < MAX_DEPTH)
-		prd.radiance += DirectLight(mat, state);
+		prd.radiance += direct_radiance;
 
 	// BRDF Sampling
 	sysBRDFSample[mat.brdf](mat, state, prd);

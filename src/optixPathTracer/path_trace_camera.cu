@@ -132,7 +132,14 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.albedo_at_first = prd.albedo;
 			sr.normal_at_first = prd.normal;
+			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
+		}
+		
+		if (prd.depth == 1 && !prd.hasHit && dot(prd.light_intensity, prd.light_intensity) != 0)
+		{
+			// the object is visible if the ray hit a non-black light at the second bounce
+			sr.visibility = true;
 		}
 
 		if (prd.done)

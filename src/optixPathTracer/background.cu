@@ -86,6 +86,7 @@ RT_PROGRAM void miss()
 			misWeight = powerHeuristic(prd.pdf, pdfLight);
 		}
 
+		prd.light_intensity = emission;
 		prd.radiance += misWeight * emission * prd.throughput;
 	}
 

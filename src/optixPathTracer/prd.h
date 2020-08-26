@@ -48,7 +48,7 @@ struct PerRayData_radiance
   float pdf;
 
   /* LLPM per-vertex cache for SampleRecord */
-  optix::float3 thpt_at_vtx, albedo, normal;
+  optix::float3 thpt_at_vtx, albedo, normal, light_intensity;
   float ray_dist; // depth buffer
   bool hasHit;
   optix::float4 probabilities;

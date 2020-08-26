@@ -56,14 +56,16 @@ def main():
         throughputs = arr[:,:,:,31+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*10]
         roughnesses = arr[:,:,:,31+(MAX_DEPTH+1)*10:31+(MAX_DEPTH+1)*11]
 
-        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
+        #plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
+        #plt.show()
+        #plt.imshow(np.mean(albedo_at_first, 2))
+        #plt.show()
+        #plt.imshow(np.mean(normal_at_first * 0.5 + 0.5, 2))
+        #plt.show()
+        plt.imshow(np.mean(visibility, 2), cmap='gray')
         plt.show()
-        plt.imshow(np.mean(albedo_at_first, 2))
-        plt.show()
-        plt.imshow(np.mean(normal_at_first, 2))
-        plt.show()
-        plt.imshow(np.mean(hasHit, 2), cmap='gray')
-        plt.show()
+        #plt.imshow(np.mean(hasHit, 2), cmap='gray')
+        #plt.show()
 
 
 if __name__ == '__main__':

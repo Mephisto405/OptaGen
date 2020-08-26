@@ -100,6 +100,7 @@ RT_PROGRAM void closest_hit()
 			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
 		}
 
+		prd.light_intensity = light.emission;
 	}
 
 	prd.albedo = make_float3(0.f);
