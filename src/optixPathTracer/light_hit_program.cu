@@ -105,6 +105,7 @@ RT_PROGRAM void closest_hit()
 
 	prd.albedo = make_float3(0.f);
 	prd.normal = ffnormal;
+	prd.ray_dist = -1.0f;
 	prd.hasHit = false;
 
 	prd.done = true;

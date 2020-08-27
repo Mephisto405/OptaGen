@@ -92,6 +92,7 @@ RT_PROGRAM void miss()
 
 	prd.albedo = make_float3(0.f);
 	prd.normal = make_float3(0.f);
+	prd.ray_dist = -1.0f;
 	prd.hasHit = false;
 
 	prd.done = true;

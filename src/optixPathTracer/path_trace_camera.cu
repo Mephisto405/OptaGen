@@ -46,7 +46,7 @@ rtDeclareVariable(float3, W, , );
 rtDeclareVariable(float3, bad_color, , );
 rtDeclareVariable(float, scene_epsilon, , );
 rtDeclareVariable(float3, cutoff_color, , );
-rtDeclareVariable(int, max_depth, , );
+rtDeclareVariable(float, scene_radius, , );
 rtBuffer<float4, 2>              output_buffer;
 rtBuffer<SampleRecord[MAX_SAMPLES], 2>      mbpf_buffer; /* Multiple-bounced feature buffer */
 rtBuffer<float4, 2>              accum_buffer;
@@ -118,6 +118,7 @@ RT_PROGRAM void pinhole_camera()
 	SampleRecord sr = {};
 	sr.subpixel_x = subpixel_x;
 	sr.subpixel_y = subpixel_y;
+	float depth_norm = scene_radius > 0.0f ? 1.0f / (10.0f * scene_radius) : 1.0f;
 
 
 	/* Main rendering loop */
@@ -127,15 +128,19 @@ RT_PROGRAM void pinhole_camera()
 		prd.wo = -ray.direction;
 		rtTrace(top_object, ray, prd);
 
-		// post-processing
+
+		/* post-processing */
+		// at the first geometric bounce
 		if (prd.depth == 0)
 		{
 			sr.albedo_at_first = prd.albedo;
 			sr.normal_at_first = prd.normal;
+			sr.depth_at_first = prd.ray_dist * depth_norm;
 			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
 		}
 		
+		// TODO(iycho): dirty code and not work properly
 		if (prd.depth == 1 && !prd.hasHit && dot(prd.light_intensity, prd.light_intensity) != 0)
 		{
 			// the object is visible if the ray hit a non-black light at the second bounce

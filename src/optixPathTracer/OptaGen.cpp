@@ -234,7 +234,6 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	context->setStackSize(800);
 
 	// Note: high max depth for reflection and refraction through glass
-	context["max_depth"]->setInt(max_depth);
 	context["cutoff_color"]->setFloat(0.0f, 0.0f, 0.0f);
 	context["frame"]->setUint(0u);
 	context["curr_time"]->setUint(static_cast <unsigned int> (time(0)));
@@ -1490,6 +1489,7 @@ int main(int argc, char** argv)
 		context["sysNumberOfLights"]->setInt(scene->lights.size());
 		optix::Group top_group;
 		const optix::Aabb aabb = createGeometry(top_group);
+		context["scene_radius"]->setFloat(aabb.maxExtent());
 
 		/* Visualize axis-aligned bounding box (aabb)
 		updateAabbLights(aabb1);

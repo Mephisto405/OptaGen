@@ -62,7 +62,7 @@ def main():
         #plt.show()
         #plt.imshow(np.mean(normal_at_first * 0.5 + 0.5, 2))
         #plt.show()
-        plt.imshow(np.mean(visibility, 2), cmap='gray')
+        plt.imshow(np.mean(depth_at_first, 2), cmap='binary')
         plt.show()
         #plt.imshow(np.mean(hasHit, 2), cmap='gray')
         #plt.show()

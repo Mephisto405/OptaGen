@@ -132,6 +132,7 @@ RT_PROGRAM void closest_hit()
 	state.normal = world_shading_normal;
 	state.ffnormal = ffnormal;
 	prd.wo = -ray.direction;
+	prd.ray_dist = sqrtf(dot(state.fhp - ray.origin, state.fhp - ray.origin));
 
 	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
