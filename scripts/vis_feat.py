@@ -71,13 +71,27 @@ def main():
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
-        """
+        plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
+        plt.show()
+        plt.imshow(np.mean(hasHit, 2), cmap='gray')
+        plt.show()
+        plt.imshow((np.mean(path_weight, 2) / (1 + np.mean(path_weight, 2) / 1.5)) ** 0.45, cmap='gray')
+        plt.show()
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_wo_weight, 2), 1.5)))
+        plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(light_intensity, 2), 1.5)))
         plt.show()
-        #plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
-        #plt.show()
-        #plt.imshow(np.mean(hasHit, 2), cmap='gray')
-        #plt.show()
+        """
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow(LinearToSrgb(ToneMap(np.mean(throughputs[:,:,:,3*i:3*i+3], 2), 1.5)))
+        plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow((np.mean(roughnesses[:,:,:,i], 2) / (1 + np.mean(roughnesses[:,:,:,i], 2) / 1.5)) ** 0.45, cmap='binary')
+        plt.show()
 
 
 if __name__ == '__main__':

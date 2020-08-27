@@ -157,20 +157,26 @@ RT_PROGRAM void pinhole_camera()
 		}
 
 		if (!prd.hasHit)
+		{
 			sr.light_intensity = prd.light_intensity;
+		}
+		else
+		{
+			if (prd.depth == 0)
+			{
+				sr.path_weight = 1.0f;
+				sr.radiance_wo_weight = make_float3(1.0f);
+			}
+			sr.path_weight *= prd.pdf;
+			sr.radiance_wo_weight *= prd.thpt_at_vtx;
+
+			// record sample data
+			sr.throughputs[prd.depth] = prd.thpt_at_vtx;
+			sr.bounce_types[prd.depth] = (float)prd.bounce_type;
+			sr.roughnesses[prd.depth] = prd.roughness;
+		}
 
 		/* exit if light cannot transfer further */
-		if (prd.done)
-			break;
-
-		// record sample data
-		sr.path_weight *= prd.pdf;
-		sr.radiance_wo_weight *= prd.thpt_at_vtx;
-
-		sr.throughputs[prd.depth] = prd.thpt_at_vtx;
-		sr.bounce_types[prd.depth] = (float)prd.bounce_type;
-		sr.roughnesses[prd.depth] = prd.roughness;
-
 		if (prd.done || prd.depth >= MAX_DEPTH) // >= max_depth
 			break;
 
