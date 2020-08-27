@@ -214,7 +214,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = alphaConversion(mat.roughness, mat.dist);
-		prd.tag = REFL;
+		prd.bounce_type = BSDF_REFLECTION | BSDF_GLOSSY;
 
 		/* Sanity check */
 		if (dot(V, N) * dot(prd.bsdfDir, N) <= 0.0f) // should be reflected, but it wasn't
@@ -227,7 +227,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = alphaConversion(mat.roughness, mat.dist);
-		prd.tag = TRAN;
+		prd.bounce_type = BSDF_TRANSMISSION | BSDF_GLOSSY;
 
 		/* Sanity check */
 		if (dot(V, N) * dot(prd.bsdfDir, N) >= 0.0f) // should be refracted, but it wasn't

@@ -53,7 +53,7 @@ struct PerRayData_radiance
   bool hasHit;
   optix::float4 probabilities;
   optix::float2 light_directions;
-  InteractionType tag;
+  unsigned int bounce_type;
   float roughness;
 };
 

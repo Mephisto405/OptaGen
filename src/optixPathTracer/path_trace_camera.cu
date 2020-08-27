@@ -156,7 +156,7 @@ RT_PROGRAM void pinhole_camera()
 		//sr.light_intensity = ;
 
 		sr.throughputs[prd.depth] = prd.thpt_at_vtx;
-		sr.bounce_types[prd.depth] = (float)prd.tag;
+		sr.bounce_types[prd.depth] = (float)prd.bounce_type;
 		sr.roughnesses[prd.depth] = prd.roughness;
 
 		if (prd.done || prd.depth >= MAX_DEPTH) // >= max_depth

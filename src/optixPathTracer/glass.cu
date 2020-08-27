@@ -101,7 +101,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = 0.0f;
-		prd.tag = REFL;
+		prd.bounce_type = BSDF_REFLECTION | BSDF_SPECULAR;
 	}
 	else
 	{
@@ -111,7 +111,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = 0.0f;
-		prd.tag = TRAN;
+		prd.bounce_type = BSDF_TRANSMISSION | BSDF_SPECULAR;
 	}
 }
 

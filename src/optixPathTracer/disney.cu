@@ -124,7 +124,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = a;
-		prd.tag = DIFF;
+		prd.bounce_type = BSDF_REFLECTION | BSDF_DIFFUSE;
 	}
 	else
 	{
@@ -143,7 +143,7 @@ RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData
 
 		// update path feature
 		prd.roughness = a;
-		prd.tag = (a > 0.01f) ? GLOS : SPEC;
+		prd.bounce_type = BSDF_REFLECTION | BSDF_GLOSSY;
 	}
 	prd.bsdfDir = dir;
 }
