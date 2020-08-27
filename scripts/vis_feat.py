@@ -50,14 +50,15 @@ def main():
         bounce_types = arr[:,:,:,24+(MAX_DEPTH+1)*6:24+(MAX_DEPTH+1)*7]
 
         path_weight = arr[:,:,:,24+(MAX_DEPTH+1)*7]
-        radiance_wo_weight = arr[:,:,:,25+(MAX_DEPTH+1)*7:27+(MAX_DEPTH+1)*7]
-        light_intensity = arr[:,:,:,27+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*7]
+        radiance_wo_weight = arr[:,:,:,25+(MAX_DEPTH+1)*7:28+(MAX_DEPTH+1)*7]
+        light_intensity = arr[:,:,:,28+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*7]
 
         throughputs = arr[:,:,:,31+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*10]
         roughnesses = arr[:,:,:,31+(MAX_DEPTH+1)*10:31+(MAX_DEPTH+1)*11]
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
+        """
         plt.imshow(np.mean(albedo_at_first, 2))
         plt.show()
         plt.imshow(np.mean(albedo, 2))
@@ -69,6 +70,9 @@ def main():
         plt.imshow(np.mean(depth_at_first, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
+        plt.show()
+        """
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(light_intensity, 2), 1.5)))
         plt.show()
         #plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
         #plt.show()

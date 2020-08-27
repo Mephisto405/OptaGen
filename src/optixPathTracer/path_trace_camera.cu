@@ -156,13 +156,16 @@ RT_PROGRAM void pinhole_camera()
 			sr.depth = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
 		}
 
+		if (!prd.hasHit)
+			sr.light_intensity = prd.light_intensity;
+
+		/* exit if light cannot transfer further */
 		if (prd.done)
 			break;
 
 		// record sample data
 		sr.path_weight *= prd.pdf;
 		sr.radiance_wo_weight *= prd.thpt_at_vtx;
-		//sr.light_intensity = ;
 
 		sr.throughputs[prd.depth] = prd.thpt_at_vtx;
 		sr.bounce_types[prd.depth] = (float)prd.bounce_type;
