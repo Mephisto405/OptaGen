@@ -135,7 +135,7 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.albedo_at_first = prd.albedo;
 			sr.normal_at_first = prd.normal;
-			sr.depth_at_first = prd.ray_dist * depth_norm;
+			sr.depth_at_first = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
 			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
 		}
@@ -145,6 +145,15 @@ RT_PROGRAM void pinhole_camera()
 		{
 			// the object is visible if the ray hit a non-black light at the second bounce
 			sr.visibility = true;
+		}
+
+		// either at the first non specular bounce 
+		// or no specular bounce until the end of light transport
+		if (prd.is_first_non_specular || (sr.depth == 0.0f && !prd.hasHit))
+		{
+			sr.albedo = prd.albedo;
+			sr.normal = prd.normal;
+			sr.depth = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
 		}
 
 		if (prd.done)

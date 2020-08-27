@@ -132,13 +132,22 @@ RT_PROGRAM void closest_hit()
 	state.normal = world_shading_normal;
 	state.ffnormal = ffnormal;
 	prd.wo = -ray.direction;
-	prd.ray_dist = sqrtf(dot(state.fhp - ray.origin, state.fhp - ray.origin));
+	prd.ray_dist += sqrtf(dot(state.fhp - ray.origin, state.fhp - ray.origin));
 
 	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
 
 	// TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
+	bool bsdf_has_diffuse = (mat.brdf == LAMBERT || (mat.brdf == DISNEY && mat.metallic != 1.0f));
+	bool bsdf_has_nonspecular = bsdf_has_diffuse || (mat.brdf == ROUGHDIELECTRIC);
+
+	prd.is_first_non_specular = false;
+	if (!prd.found_non_specular && bsdf_has_nonspecular)
+	{
+		prd.is_first_non_specular = true;
+		prd.found_non_specular = true;
+	}
 
 	// Direct light Sampling
 	optix::float3 direct_radiance = DirectLight(mat, state);

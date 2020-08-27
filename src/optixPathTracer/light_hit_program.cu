@@ -107,6 +107,7 @@ RT_PROGRAM void closest_hit()
 	prd.normal = ffnormal;
 	prd.ray_dist = -1.0f;
 	prd.hasHit = false;
+	prd.is_first_non_specular = false;
 
 	prd.done = true;
 }

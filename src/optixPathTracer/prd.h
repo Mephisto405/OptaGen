@@ -48,6 +48,8 @@ struct PerRayData_radiance
   float pdf;
 
   /* LLPM per-vertex cache for SampleRecord */
+  bool found_non_specular; // found any non specular bounce
+  bool is_first_non_specular;
   optix::float3 thpt_at_vtx, albedo, normal, light_intensity;
   float ray_dist; // depth buffer
   bool hasHit;
