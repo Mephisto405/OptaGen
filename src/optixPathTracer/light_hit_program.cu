@@ -93,11 +93,17 @@ RT_PROGRAM void closest_hit()
 		if (prd.depth == 0 || prd.specularBounce)
 		{
 			prd.radiance += light.emission * prd.throughput;
+			if (prd.found_diffuse)
+				prd.radiance_diffuse += light.emission * prd.throughput_diffuse;
 		}
 		else
 		{
 			float lightPdf = (hit_dist * hit_dist) / (light.area * clamp(cosTheta, 1.e-3f, 1.0f));
-			prd.radiance += powerHeuristic(prd.pdf, lightPdf) * light.emission * prd.throughput;
+			float misWeight = powerHeuristic(prd.pdf, lightPdf);
+
+			prd.radiance += misWeight * light.emission * prd.throughput;
+			if (prd.found_diffuse)
+				prd.radiance_diffuse += misWeight * light.emission * prd.throughput_diffuse;
 		}
 
 		prd.light_intensity = light.emission;

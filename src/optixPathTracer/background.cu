@@ -88,6 +88,8 @@ RT_PROGRAM void miss()
 
 		prd.light_intensity = emission;
 		prd.radiance += misWeight * emission * prd.throughput;
+		if (prd.found_diffuse)
+		    prd.radiance_diffuse += misWeight * emission * prd.throughput_diffuse;
 	}
 
 	prd.albedo = make_float3(0.f);

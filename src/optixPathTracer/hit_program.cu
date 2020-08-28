@@ -99,7 +99,18 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 			if (!prdShadow.inShadow)
 			{
 				const float misWeight = powerHeuristic(lightSample.pdf, prd.pdf);
-				L = misWeight * prd.throughput * f * lightSample.emission / max(1e-3f, lightSample.pdf);
+				const float3 contrib = misWeight * lightSample.emission / max(1e-3f, lightSample.pdf);
+				L = contrib * prd.throughput * f;
+
+				if (prd.is_first_diffuse)
+				{
+					//float3 f_diffuse = 
+					// prd.radiance_diffuse += contrib * prd.throughput_diffuse * f_diffuse;
+				}
+				else if (prd.found_diffuse && !prd.specularBounce && prd.depth < MAX_DEPTH)
+				{
+					prd.radiance_diffuse += contrib * prd.throughput_diffuse * f;
+				}
 			}
 		}
 		else
@@ -136,11 +147,19 @@ RT_PROGRAM void closest_hit()
 
 	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
+	// prd.radiance_diffuse += but we don't have emissive material
 
 	// TODO: Clean up handling of specular bounces
 	prd.specularBounce = mat.brdf == GLASS || mat.brdf == ROUGHDIELECTRIC ? true : false;
 	bool bsdf_has_diffuse = (mat.brdf == LAMBERT || (mat.brdf == DISNEY && mat.metallic != 1.0f));
 	bool bsdf_has_nonspecular = bsdf_has_diffuse || (mat.brdf == ROUGHDIELECTRIC);
+
+	prd.is_first_diffuse = false;
+	if (!prd.found_diffuse && bsdf_has_diffuse)
+	{
+		prd.is_first_diffuse = true;
+		prd.found_diffuse = true;
+	}
 
 	prd.is_first_non_specular = false;
 	if (!prd.found_non_specular && bsdf_has_nonspecular)
@@ -166,6 +185,15 @@ RT_PROGRAM void closest_hit()
 	if (prd.pdf > 0.0f)
 	{
 		prd.throughput *= f / prd.pdf;
+		if (prd.is_first_diffuse)
+		{
+			// const float3 f_diffuse = prd.specularBounce ? make_float3(0.0f) : ~
+			// prd.throughput_diffuse *= f_diffuse / prd.pdf;
+		}
+		else
+		{
+			prd.throughput_diffuse *= f / prd.pdf;
+		}
 	}
 	else
 	{

@@ -36,6 +36,7 @@ def main():
         subpixel_y = arr[:,:,:,1]
         radiance = arr[:,:,:,2:5]
         radiance_diffuse = arr[:,:,:,5:8]
+        radiance_specular = radiance - radiance_diffuse
         albedo_at_first = arr[:,:,:,8:11]
         albedo = arr[:,:,:,11:14]
         normal_at_first = arr[:,:,:,14:17]
@@ -57,6 +58,10 @@ def main():
         roughnesses = arr[:,:,:,31+(MAX_DEPTH+1)*10:31+(MAX_DEPTH+1)*11]
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
+        plt.show()
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
+        plt.show()
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
         """
         plt.imshow(np.mean(albedo_at_first, 2))

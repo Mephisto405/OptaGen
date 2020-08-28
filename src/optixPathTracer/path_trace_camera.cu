@@ -112,7 +112,8 @@ RT_PROGRAM void pinhole_camera()
 	// ray records
 	PerRayData_radiance prd = {};
 	prd.seed = seed;
-	prd.throughput = make_float3(1.0f); // attenuation (<= 1) from the surface interaction.
+	prd.throughput = make_float3(1.0f);
+	prd.throughput_diffuse = make_float3(1.0f);
 
 	// sample records
 	SampleRecord sr = {};
@@ -159,13 +160,13 @@ RT_PROGRAM void pinhole_camera()
 		if (!prd.hasHit)
 		{
 			sr.light_intensity = prd.light_intensity;
+			sr.radiance_diffuse = make_float3(0.0f);
 		}
 		else
 		{
 			if (prd.depth == 0)
 			{
 				sr.path_weight = 1.0f;
-				sr.radiance_wo_weight = make_float3(1.0f);
 			}
 			sr.path_weight *= prd.pdf;
 			sr.radiance_wo_weight *= prd.thpt_at_vtx;
@@ -188,6 +189,7 @@ RT_PROGRAM void pinhole_camera()
 	}
 
 	sr.radiance = prd.radiance;
+	sr.radiance_diffuse = prd.radiance_diffuse;
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
