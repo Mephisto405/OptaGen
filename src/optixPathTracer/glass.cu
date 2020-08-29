@@ -142,3 +142,8 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	}
 }
 
+
+RT_CALLABLE_PROGRAM float3 EvalDiffuse(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
+{
+	return make_float3(0.0f);
+}

@@ -4,7 +4,8 @@
 #include "configs.h"
 
 /*
-For each BxDF, the flags should have at least one of BSDF_REFLECTION or BSDF_TRANSMISSION set and exactly one of the diffuse, glossy, and specular flags.
+For each BxDF, the flags should have at least one of BSDF_REFLECTION 
+or BSDF_TRANSMISSION set and exactly one of the diffuse, glossy, and specular flags.
 */
 enum BxDFType {
 	BSDF_REFLECTION = 1 << 0,
@@ -12,8 +13,7 @@ enum BxDFType {
 	BSDF_DIFFUSE = 1 << 2,
 	BSDF_GLOSSY = 1 << 3,
 	BSDF_SPECULAR = 1 << 4,
-	BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR |
-	BSDF_REFLECTION | BSDF_TRANSMISSION,
+	BSDF_ALL = BSDF_DIFFUSE | BSDF_GLOSSY | BSDF_SPECULAR |	BSDF_REFLECTION | BSDF_TRANSMISSION,
 };
 
 struct SampleRecord

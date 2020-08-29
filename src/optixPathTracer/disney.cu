@@ -213,3 +213,30 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 
 	return prd.thpt_at_vtx;
 }
+
+
+RT_CALLABLE_PROGRAM float3 EvalDiffuse(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
+{
+	float3 N = state.ffnormal;
+	float3 V = prd.wo;
+	float3 L = prd.bsdfDir;
+
+	float NDotL = dot(N, L);
+	float NDotV = dot(N, V);
+	if (NDotL <= 0.0f || NDotV <= 0.0f) return make_float3(0.0f);
+
+	float3 H = normalize(L + V);
+	float LDotH = dot(L, H);
+
+	float3 Cdlin = mat.color;
+
+	// Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
+	// and mix in diffuse retro-reflection based on roughness
+	float FL = SchlickFresnel(NDotL), FV = SchlickFresnel(NDotV);
+	float Fd90 = 0.5f + 2.0f * LDotH * LDotH * mat.roughness;
+	float Fd = lerp(1.0f, Fd90, FL) * lerp(1.0f, Fd90, FV);
+
+	float3 out = (1.0f / M_PIf) * Fd * Cdlin * (1.0f - mat.subsurface) * (1.0f - mat.metallic);
+
+	return out * clamp(NDotL, 0.0f, 1.0f);
+}

@@ -58,6 +58,7 @@ rtDeclareVariable(int, max_depth, , );
 rtBuffer< rtCallableProgramId<void(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFPdf;
 rtBuffer< rtCallableProgramId<void(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFSample;
 rtBuffer< rtCallableProgramId<float3(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFEval;
+rtBuffer< rtCallableProgramId<float3(MaterialParameter &mat, State &state, PerRayData_radiance &prd)> > sysBRDFEvalDiffuse;
 rtBuffer< rtCallableProgramId<void(const LightParameter &light, const float3 &surfacePos, unsigned int &seed, LightSample &lightSample)> > sysLightSample;
 
 rtBuffer<MaterialParameter> sysMaterialParameters;
@@ -102,10 +103,10 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 				const float3 contrib = misWeight * lightSample.emission / max(1e-3f, lightSample.pdf);
 				L = contrib * prd.throughput * f;
 
-				if (prd.is_first_diffuse)
+				if (prd.is_first_diffuse && prd.depth < MAX_DEPTH)
 				{
-					//float3 f_diffuse = 
-					// prd.radiance_diffuse += contrib * prd.throughput_diffuse * f_diffuse;
+					float3 f_diffuse = sysBRDFEvalDiffuse[mat.brdf](mat, state, prd);
+					prd.radiance_diffuse += contrib * prd.throughput_diffuse * f_diffuse;
 				}
 				else if (prd.found_diffuse && !prd.specularBounce && prd.depth < MAX_DEPTH)
 				{
@@ -187,8 +188,8 @@ RT_PROGRAM void closest_hit()
 		prd.throughput *= f / prd.pdf;
 		if (prd.is_first_diffuse)
 		{
-			// const float3 f_diffuse = prd.specularBounce ? make_float3(0.0f) : ~
-			// prd.throughput_diffuse *= f_diffuse / prd.pdf;
+			const float3 f_diffuse = prd.specularBounce ? make_float3(0.0f) : sysBRDFEvalDiffuse[mat.brdf](mat, state, prd);
+			prd.throughput_diffuse *= f_diffuse / prd.pdf;
 		}
 		else
 		{

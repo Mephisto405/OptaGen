@@ -160,7 +160,6 @@ RT_PROGRAM void pinhole_camera()
 		if (!prd.hasHit)
 		{
 			sr.light_intensity = prd.light_intensity;
-			sr.radiance_diffuse = make_float3(0.0f);
 		}
 		else
 		{

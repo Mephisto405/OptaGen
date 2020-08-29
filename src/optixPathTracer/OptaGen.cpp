@@ -83,6 +83,7 @@ const int NUMBER_OF_BRDF_INDICES = 4;
 const int NUMBER_OF_LIGHT_INDICES = 3;
 optix::Buffer m_bufferBRDFSample;
 optix::Buffer m_bufferBRDFEval;
+optix::Buffer m_bufferBRDFEvalDiffuse;
 optix::Buffer m_bufferBRDFPdf;
 
 optix::Buffer m_bufferLightSample;
@@ -279,7 +280,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	//context["envmap"]->setTextureSampler(sutil::loadTexture(context, texture_filename, optix::make_float3(1.0f)));
 
 	Program prg;
-	// BRDF sampling functions.
+	// BSDF sampling functions.
 	m_bufferBRDFSample = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
 	int* brdfSample = (int*)m_bufferBRDFSample->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Sample");
@@ -293,7 +294,7 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	m_bufferBRDFSample->unmap();
 	context["sysBRDFSample"]->setBuffer(m_bufferBRDFSample);
 
-	// BRDF Eval functions.
+	// BSDF Eval functions.
 	m_bufferBRDFEval = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
 	int* brdfEval = (int*)m_bufferBRDFEval->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Eval");
@@ -307,7 +308,21 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	m_bufferBRDFEval->unmap();
 	context["sysBRDFEval"]->setBuffer(m_bufferBRDFEval);
 
-	// BRDF Pdf functions.
+    // BSDF EvalDiffuse functions for LLPM.
+	m_bufferBRDFEvalDiffuse = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
+	int* brdfEvalDiffuse = (int*)m_bufferBRDFEvalDiffuse->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
+	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "EvalDiffuse");
+	brdfEvalDiffuse[BrdfType::DISNEY] = prg->getId();
+	prg = context->createProgramFromPTXFile(ptxPath("glass.cu"), "EvalDiffuse");
+	brdfEvalDiffuse[BrdfType::GLASS] = prg->getId();
+	prg = context->createProgramFromPTXFile(ptxPath("lambert.cu"), "EvalDiffuse");
+	brdfEvalDiffuse[BrdfType::LAMBERT] = prg->getId();
+	prg = context->createProgramFromPTXFile(ptxPath("roughdielectric.cu"), "EvalDiffuse");
+	brdfEvalDiffuse[BrdfType::ROUGHDIELECTRIC] = prg->getId();
+	m_bufferBRDFEvalDiffuse->unmap();
+	context["sysBRDFEvalDiffuse"]->setBuffer(m_bufferBRDFEvalDiffuse);
+
+	// BSDF Pdf functions.
 	m_bufferBRDFPdf = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, NUMBER_OF_BRDF_INDICES);
 	int* brdfPdf = (int*)m_bufferBRDFPdf->map(0, RT_BUFFER_MAP_WRITE_DISCARD);
 	prg = context->createProgramFromPTXFile(ptxPath("disney.cu"), "Pdf");

@@ -17,7 +17,7 @@ def ToneMap(c, limit):
 def LinearToSrgb(c):
     # c: (W, H, C=3)
     kInvGamma = 1.0 / 2.2
-    return np.clip(c ** kInvGamma, 0.0, 1.0)
+    return np.clip(c, 0.0, 1.0) ** kInvGamma
 
 def main():
     parser = argparse.ArgumentParser(description='Path descriptor visualizer.')
@@ -59,8 +59,13 @@ def main():
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
+        print(np.max(radiance_diffuse))
+        print(np.min(radiance_diffuse))
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
+        print(np.max(radiance_specular))
+        print(np.min(radiance_specular))
+        #plt.imshow(np.mean(np.where(radiance_specular<0.0, 1.0, 0.0), 2))
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
         """
@@ -86,7 +91,6 @@ def main():
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(light_intensity, 2), 1.5)))
         plt.show()
-        """
         for i in range(MAX_DEPTH+1):
             plt.subplot(2,3,i+1)
             plt.title(str(i+1))
@@ -97,6 +101,7 @@ def main():
             plt.title(str(i+1))
             plt.imshow((np.mean(roughnesses[:,:,:,i], 2) / (1 + np.mean(roughnesses[:,:,:,i], 2) / 1.5)) ** 0.45, cmap='binary')
         plt.show()
+        """
 
 
 if __name__ == '__main__':

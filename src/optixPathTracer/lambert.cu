@@ -79,3 +79,19 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 
 	return prd.thpt_at_vtx;
 }
+
+
+RT_CALLABLE_PROGRAM float3 EvalDiffuse(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
+{
+	float3 N = state.ffnormal;
+	float3 V = prd.wo;
+	float3 L = prd.bsdfDir;
+
+	float NDotL = dot(N, L);
+	float NDotV = dot(N, V);
+	if (NDotL <= 0.0f || NDotV <= 0.0f) return make_float3(0.0f);
+
+	float3 out = (1.0f / M_PIf) * mat.color;
+
+	return out * clamp(NDotL, 0.0f, 1.0f);
+}
