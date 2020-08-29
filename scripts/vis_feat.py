@@ -59,13 +59,10 @@ def main():
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
-        print(np.max(radiance_diffuse))
-        print(np.min(radiance_diffuse))
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
-        print(np.max(radiance_specular))
-        print(np.min(radiance_specular))
-        #plt.imshow(np.mean(np.where(radiance_specular<0.0, 1.0, 0.0), 2))
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2) / np.mean(albedo + 0.00316, 2), 1.5)))
+        plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
         """
