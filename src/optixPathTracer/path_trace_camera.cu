@@ -124,6 +124,8 @@ RT_PROGRAM void pinhole_camera()
 	sr.subpixel_x = subpixel_x;
 	sr.subpixel_y = subpixel_y;
 	float depth_norm = scene_radius > 0.0f ? 1.0f / (10.0f * scene_radius) : 1.0f;
+	sr.radiance_wo_weight = make_float3(1.0f);
+	sr.path_weight = 1.0f;
 
 
 	/* Main rendering loop */
@@ -164,6 +166,7 @@ RT_PROGRAM void pinhole_camera()
 		if (!prd.hasHit)
 		{
 			sr.light_intensity = prd.light_intensity;
+			sr.radiance_wo_weight *= prd.light_intensity;
 		}
 		else
 		{

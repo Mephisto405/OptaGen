@@ -59,6 +59,7 @@ def main():
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
+        """
         for i in range(MAX_DEPTH+1):
             plt.subplot(2,3,i+1)
             plt.title(str(i+1))
@@ -69,7 +70,6 @@ def main():
             plt.title(str(i+1))
             plt.imshow(np.mean(light_directions[:,:,:,2*i+1], 2), cmap='binary')
         plt.show()
-        """
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2) / np.mean(albedo + 0.00316, 2), 1.5)))
@@ -92,10 +92,17 @@ def main():
         plt.show()
         plt.imshow(np.mean(hasHit, 2), cmap='gray')
         plt.show()
+        plt.imshow(np.mean(visibility, 2), cmap='gray')
+        plt.show()
         plt.imshow((np.mean(path_weight, 2) / (1 + np.mean(path_weight, 2) / 1.5)) ** 0.45, cmap='gray')
         plt.show()
+        """
+        radiance_wo_weight[:,:,:,0] /= path_weight + 0.00316
+        radiance_wo_weight[:,:,:,1] /= path_weight + 0.00316
+        radiance_wo_weight[:,:,:,2] /= path_weight + 0.00316
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_wo_weight, 2), 1.5)))
         plt.show()
+        """
         plt.imshow(LinearToSrgb(ToneMap(np.mean(light_intensity, 2), 1.5)))
         plt.show()
         for i in range(MAX_DEPTH+1):
