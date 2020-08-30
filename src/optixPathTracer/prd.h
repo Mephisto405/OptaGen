@@ -58,7 +58,7 @@ struct PerRayData_radiance
   float ray_dist; // depth buffer
   bool hasHit;
   optix::float4 probabilities;
-  optix::float2 light_directions;
+  optix::float3 light_directions;
   unsigned int bounce_type;
   float roughness;
 };

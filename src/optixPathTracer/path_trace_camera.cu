@@ -178,7 +178,28 @@ RT_PROGRAM void pinhole_camera()
 			sr.throughputs[prd.depth] = prd.thpt_at_vtx;
 			sr.bounce_types[prd.depth] = (float)prd.bounce_type;
 			sr.roughnesses[prd.depth] = prd.roughness;
+			
+			float3 wi = make_float3(dot(prd.light_directions, Cam_x), dot(prd.light_directions, Cam_y), dot(prd.light_directions, Cam_z));
+			float nrm = sqrt(wi.x*wi.x + wi.y*wi.y);
+			float theta = 0.0f;
+			float phi = 0.0f;
+
+			if (nrm == 0.0f) 
+				theta = 0.0f;
+			else
+				theta = atan2(wi.y, wi.x);
+			
+			if (nrm == 0.0f && wi.z == 0)
+				phi = 0.0f;
+			else 
+				phi = atan2(nrm, wi.z);
+			theta /= M_PI;
+			phi /= M_PI;
+
+			sr.light_directions[prd.depth * 2] = theta;
+			sr.light_directions[prd.depth * 2 + 1] = phi;
 		}
+
 
 		/* exit if light cannot transfer further */
 		if (prd.done || prd.depth >= MAX_DEPTH) // >= max_depth

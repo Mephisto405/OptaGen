@@ -84,6 +84,7 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 	if (0.0f < lightSample.pdf)
 	{
 		prd.bsdfDir = lightSample.direction;
+		prd.light_directions = lightSample.direction;
 		sysBRDFPdf[mat.brdf](mat, state, prd);
 		float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
 
