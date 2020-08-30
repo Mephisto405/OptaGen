@@ -143,8 +143,12 @@ RT_PROGRAM void closest_hit()
 	state.bhp = back_hit_point;
 	state.normal = world_shading_normal;
 	state.ffnormal = ffnormal;
+	
 	prd.wo = -ray.direction;
 	prd.ray_dist += sqrtf(dot(state.fhp - ray.origin, state.fhp - ray.origin));
+	prd.albedo = mat.color; 
+	prd.normal = ffnormal; // camera-space normal
+	prd.hasHit = true;
 
 	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
@@ -178,10 +182,6 @@ RT_PROGRAM void closest_hit()
 	sysBRDFSample[mat.brdf](mat, state, prd);
 	sysBRDFPdf[mat.brdf](mat, state, prd);
 	float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
-
-	prd.albedo = mat.color; 
-	prd.normal = normalize(rtTransformNormal(RT_WORLD_TO_OBJECT, ffnormal)); // camera-space normal
-	prd.hasHit = true;
 
 	if (prd.pdf > 0.0f)
 	{

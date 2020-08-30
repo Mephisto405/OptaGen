@@ -107,6 +107,10 @@ RT_PROGRAM void pinhole_camera()
 	float3 ray_origin = eye;
 	float3 ray_direction = normalize(d.x*U + d.y*V + W);
 
+	float3 Cam_x = normalize(U);
+	float3 Cam_y = normalize(W);
+	float3 Cam_z = normalize(V);
+
 
 	/* Records */
 	// ray records
@@ -135,7 +139,7 @@ RT_PROGRAM void pinhole_camera()
 		if (prd.depth == 0)
 		{
 			sr.albedo_at_first = prd.albedo;
-			sr.normal_at_first = prd.normal;
+			sr.normal_at_first = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
 			sr.depth_at_first = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
 			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
@@ -153,7 +157,7 @@ RT_PROGRAM void pinhole_camera()
 		if (prd.is_first_non_specular || (sr.depth == 0.0f && !prd.hasHit))
 		{
 			sr.albedo = prd.albedo;
-			sr.normal = prd.normal;
+			sr.normal = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
 			sr.depth = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
 		}
 

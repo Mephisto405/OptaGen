@@ -59,21 +59,22 @@ def main():
 
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
+        """
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2) / np.mean(albedo + 0.00316, 2), 1.5)))
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
-        """
         plt.imshow(np.mean(albedo_at_first, 2))
         plt.show()
         plt.imshow(np.mean(albedo, 2))
-        plt.show()
+        plt.show()"""
         plt.imshow(np.mean(normal_at_first * 0.5 + 0.5, 2))
         plt.show()
         plt.imshow(np.mean(normal * 0.5 + 0.5, 2))
         plt.show()
+        """
         plt.imshow(np.mean(depth_at_first, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
