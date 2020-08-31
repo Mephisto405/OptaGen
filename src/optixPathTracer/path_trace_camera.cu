@@ -47,9 +47,11 @@ rtDeclareVariable(float3, bad_color, , );
 rtDeclareVariable(float, scene_epsilon, , );
 rtDeclareVariable(float3, cutoff_color, , );
 rtDeclareVariable(float, scene_radius, , );
-rtBuffer<float4, 2>              output_buffer;
-rtBuffer<SampleRecord[MAX_SAMPLES], 2>      mbpf_buffer; /* Multiple-bounced feature buffer */
-rtBuffer<float4, 2>              accum_buffer;
+rtBuffer<float4, 2> output_buffer;
+rtBuffer<float3, 2> diffuse_buffer;
+rtBuffer<float3, 2> albedo_buffer;
+rtBuffer<SampleRecord[MAX_SAMPLES], 2> mbpf_buffer; /* Multiple-bounced feature buffer */
+rtBuffer<float4, 2> accum_buffer;
 rtDeclareVariable(rtObject, top_object, , );
 rtDeclareVariable(unsigned int, frame, , );
 rtDeclareVariable(unsigned int, curr_time, , );
@@ -233,18 +235,28 @@ RT_PROGRAM void pinhole_camera()
 	result = prd.radiance;
 
 	float4 acc_val = accum_buffer[launch_index];
+	float3 acc_diffuse = diffuse_buffer[launch_index];
+	float3 acc_albedo = albedo_buffer[launch_index];
+
 	if (frame > 0) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
+		acc_diffuse = lerp(acc_diffuse, sr.radiance_diffuse, 1.0f / static_cast<float>(frame + 1));
+		acc_albedo = lerp(acc_albedo, sr.albedo_at_diff, 1.0f / static_cast<float>(frame + 1));
 	}
 	else {
 		acc_val = make_float4(result, 0.f);
+		acc_diffuse = sr.radiance_diffuse;
+		acc_albedo = sr.albedo_at_diff;
 	}
 
 	//float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));
 	//float4 val = LinearToSrgb(acc_val);
 
-	output_buffer[launch_index] = acc_val; // uint
+	output_buffer[launch_index] = acc_val;
 	accum_buffer[launch_index] = acc_val;
+	diffuse_buffer[launch_index] = acc_diffuse;
+	albedo_buffer[launch_index] = acc_albedo;
+	
 	if (frame < mbpf_frames)
 		mbpf_buffer[launch_index][frame] = sr;
 }

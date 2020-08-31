@@ -71,12 +71,12 @@ def main():
         plt.show()
         plt.imshow(np.mean(subpixel_y, 2), cmap='gray')
         plt.show()
-
+        """
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
-        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2) / np.mean(albedo + 0.00316, 2), 1.5)))
+        plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2) / np.mean(albedo_at_diff + 0.00316, 2), 1.5)))
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
@@ -93,7 +93,6 @@ def main():
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
-        """
         plt.imshow(np.mean(visibility, 2), cmap='gray')
         plt.show()
         plt.imshow(np.mean(hasHit, 2), cmap='gray')
@@ -133,13 +132,13 @@ def main():
         plt.show()"""
 
 
-        """ KPCN features """
+        """ KPCN features 
         plt.imshow(np.mean(albedo_at_diff, 2))
         plt.show()
         plt.imshow(np.mean(normal_at_diff * 0.5 + 0.5, 2))
         plt.show()
         plt.imshow(np.mean(depth_at_diff, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
-        plt.show()
+        plt.show()"""
 
         """ LLPM features 
         plt.imshow((np.mean(path_weight, 2) / (1 + np.mean(path_weight, 2) / 1.5)) ** 0.45, cmap='gray')
