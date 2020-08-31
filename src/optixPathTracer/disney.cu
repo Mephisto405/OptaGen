@@ -71,6 +71,12 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 	float3 V = prd.wo;
 	float3 L = prd.bsdfDir;
 
+	if (dot(L, n) <= 0.0f)
+	{
+		prd.pdf = 0.0f;
+		return;
+	}
+
 	float specularAlpha = max(0.001f, mat.roughness);
 	float clearcoatAlpha = lerp(0.1f, 0.001f, mat.clearcoatGloss);
 

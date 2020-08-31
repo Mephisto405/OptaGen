@@ -104,6 +104,9 @@ RT_PROGRAM void closest_hit()
 			prd.radiance += misWeight * light.emission * prd.throughput;
 			if (prd.found_diffuse)
 				prd.radiance_diffuse += misWeight * light.emission * prd.throughput_diffuse;
+
+			prd.probabilities.z = lightPdf;
+			prd.probabilities.w = prd.pdf;
 		}
 
 		prd.light_intensity = light.emission;

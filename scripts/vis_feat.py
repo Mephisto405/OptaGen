@@ -28,8 +28,6 @@ def main():
     arr = np.load(filename)
 
     if len(arr.shape) == 4:
-        print("Path descriptor")
-
         MAX_DEPTH = 5
 
         subpixel_x = arr[:,:,:,0]
@@ -57,18 +55,13 @@ def main():
         throughputs = arr[:,:,:,31+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*10]
         roughnesses = arr[:,:,:,31+(MAX_DEPTH+1)*10:31+(MAX_DEPTH+1)*11]
 
+
+        plt.imshow(np.mean(subpixel_x, 2), cmap='gray')
+        plt.show()
+        plt.imshow(np.mean(subpixel_y, 2), cmap='gray')
+        plt.show()
+
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance, 2), 1.5)))
-        plt.show()
-        """
-        for i in range(MAX_DEPTH+1):
-            plt.subplot(2,3,i+1)
-            plt.title(str(i+1))
-            plt.imshow(np.mean(light_directions[:,:,:,2*i], 2), cmap='binary')
-        plt.show()
-        for i in range(MAX_DEPTH+1):
-            plt.subplot(2,3,i+1)
-            plt.title(str(i+1))
-            plt.imshow(np.mean(light_directions[:,:,:,2*i+1], 2), cmap='binary')
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_diffuse, 2), 1.5)))
         plt.show()
@@ -76,6 +69,7 @@ def main():
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
+        
         plt.imshow(np.mean(albedo_at_first, 2))
         plt.show()
         plt.imshow(np.mean(albedo, 2))
@@ -88,23 +82,54 @@ def main():
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
-        plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
+        plt.imshow(np.mean(visibility, 2), cmap='gray')
         plt.show()
         plt.imshow(np.mean(hasHit, 2), cmap='gray')
         plt.show()
-        plt.imshow(np.mean(visibility, 2), cmap='gray')
+
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow((np.mean(probabilities[:,:,:,4*i], 2) / (1 + np.mean(probabilities[:,:,:,4*i], 2) / 1.5)) ** 0.45, cmap='gray')
         plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow((np.mean(probabilities[:,:,:,4*i+1], 2) / (1 + np.mean(probabilities[:,:,:,4*i+1], 2) / 1.5)) ** 0.45, cmap='gray')
+        plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow((np.mean(probabilities[:,:,:,4*i+2], 2) / (1 + np.mean(probabilities[:,:,:,4*i+2], 2) / 1.5)) ** 0.45, cmap='gray')
+        plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow((np.mean(probabilities[:,:,:,4*i+3], 2) / (1 + np.mean(probabilities[:,:,:,4*i+3], 2) / 1.5)) ** 0.45, cmap='gray')
+        plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow(np.mean(light_directions[:,:,:,2*i], 2), cmap='binary')
+        plt.show()
+        for i in range(MAX_DEPTH+1):
+            plt.subplot(2,3,i+1)
+            plt.title(str(i+1))
+            plt.imshow(np.mean(light_directions[:,:,:,2*i+1], 2), cmap='binary')
+        plt.show()
+        plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
+        plt.show()
+
         plt.imshow((np.mean(path_weight, 2) / (1 + np.mean(path_weight, 2) / 1.5)) ** 0.45, cmap='gray')
         plt.show()
-        """
         radiance_wo_weight[:,:,:,0] /= path_weight + 0.00316
         radiance_wo_weight[:,:,:,1] /= path_weight + 0.00316
         radiance_wo_weight[:,:,:,2] /= path_weight + 0.00316
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_wo_weight, 2), 1.5)))
         plt.show()
-        """
         plt.imshow(LinearToSrgb(ToneMap(np.mean(light_intensity, 2), 1.5)))
         plt.show()
+
         for i in range(MAX_DEPTH+1):
             plt.subplot(2,3,i+1)
             plt.title(str(i+1))
@@ -115,7 +140,6 @@ def main():
             plt.title(str(i+1))
             plt.imshow((np.mean(roughnesses[:,:,:,i], 2) / (1 + np.mean(roughnesses[:,:,:,i], 2) / 1.5)) ** 0.45, cmap='binary')
         plt.show()
-        """
 
 
 if __name__ == '__main__':

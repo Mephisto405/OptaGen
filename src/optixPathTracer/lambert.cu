@@ -33,10 +33,9 @@ RT_CALLABLE_PROGRAM void Pdf(MaterialParameter &mat, State &state, PerRayData_ra
 	float3 n = state.ffnormal;
 	float3 L = prd.bsdfDir;
 
-	float pdfDiff = abs(dot(L, n))* (1.0f / M_PIf);
+	float pdfDiff = clamp(dot(L, n), 0.0f, 1.0f)* (1.0f / M_PIf);
 
 	prd.pdf = pdfDiff;
-
 }
 
 RT_CALLABLE_PROGRAM void Sample(MaterialParameter &mat, State &state, PerRayData_radiance &prd)
@@ -75,7 +74,7 @@ RT_CALLABLE_PROGRAM float3 Eval(MaterialParameter &mat, State &state, PerRayData
 	float3 out = (1.0f / M_PIf) * mat.color;
 
 	// update path feature
-	prd.thpt_at_vtx = out * clamp(dot(N, L), 0.0f, 1.0f);
+	prd.thpt_at_vtx = out * clamp(NDotL, 0.0f, 1.0f);
 
 	return prd.thpt_at_vtx;
 }

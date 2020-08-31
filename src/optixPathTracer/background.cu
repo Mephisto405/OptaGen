@@ -82,8 +82,11 @@ RT_PROGRAM void miss()
 		if (!prd.specularBounce && prd.depth != 0)
 		{
 			//assert(sysLightParameters[0].lightType != LightType::ENVMAP);
-			const float pdfLight = 0.3333333333f * (emission.x + emission.y + emission.z) / light.environmentIntegral;
-			misWeight = powerHeuristic(prd.pdf, pdfLight);
+			const float lightPdf = 0.3333333333f * (emission.x + emission.y + emission.z) / light.environmentIntegral;
+			misWeight = powerHeuristic(prd.pdf, lightPdf);
+
+			prd.probabilities.z = lightPdf;
+			prd.probabilities.w = prd.pdf;
 		}
 
 		prd.light_intensity = emission;

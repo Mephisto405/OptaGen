@@ -85,8 +85,12 @@ RT_FUNCTION float3 DirectLight(MaterialParameter &mat, State &state)
 	{
 		prd.bsdfDir = lightSample.direction;
 		prd.light_directions = lightSample.direction;
+
 		sysBRDFPdf[mat.brdf](mat, state, prd);
 		float3 f = sysBRDFEval[mat.brdf](mat, state, prd);
+
+		prd.probabilities.x = lightSample.pdf;
+		prd.probabilities.y = mat.brdf == GLASS ? 0.0f : prd.pdf;
 
 		if (0.0f < prd.pdf && (f.x != 0.0f || f.y != 0.0f || f.z != 0.0f))
 		{

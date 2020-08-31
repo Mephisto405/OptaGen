@@ -147,7 +147,7 @@ RT_PROGRAM void pinhole_camera()
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
 		}
 		
-		// TODO(iycho): dirty code and not work properly
+		// TODO(iycho): dirty code
 		if (prd.depth == 1 && !prd.hasHit && dot(prd.light_intensity, prd.light_intensity) != 0)
 		{
 			// the object is visible if the ray hit a non-black light at the second bounce
@@ -167,13 +167,15 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.light_intensity = prd.light_intensity;
 			sr.radiance_wo_weight *= prd.light_intensity;
+
+			if (prd.depth >= 1)
+			{
+				sr.probabilities[(prd.depth - 1) * 4 + 2] = prd.probabilities.z;
+				sr.probabilities[(prd.depth - 1) * 4 + 3] = prd.probabilities.w;
+			}
 		}
 		else
 		{
-			if (prd.depth == 0)
-			{
-				sr.path_weight = 1.0f;
-			}
 			sr.path_weight *= prd.pdf;
 			sr.radiance_wo_weight *= prd.thpt_at_vtx;
 
@@ -201,6 +203,9 @@ RT_PROGRAM void pinhole_camera()
 
 			sr.light_directions[prd.depth * 2] = theta;
 			sr.light_directions[prd.depth * 2 + 1] = phi;
+
+			sr.probabilities[prd.depth * 4] = prd.probabilities.x;
+			sr.probabilities[prd.depth * 4 + 1] = prd.probabilities.y;
 		}
 
 
