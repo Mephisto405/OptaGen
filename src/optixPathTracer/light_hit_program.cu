@@ -114,9 +114,10 @@ RT_PROGRAM void closest_hit()
 
 	prd.albedo = make_float3(0.f);
 	prd.normal = ffnormal;
-	prd.ray_dist = -1.0f;
+	prd.ray_dist += hit_dist;
 	prd.hasHit = false;
 	prd.is_first_non_specular = false;
+	prd.is_first_diffuse = false;
 
 	prd.done = true;
 }

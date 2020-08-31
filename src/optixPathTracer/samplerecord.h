@@ -37,6 +37,13 @@ struct SampleRecord
 	float light_directions[(MAX_DEPTH + 1) * 2]; /**/
 	float bounce_types[(MAX_DEPTH + 1)];
 
+
+	/* KPCN features */
+	optix::float3 albedo_at_diff;
+	optix::float3 normal_at_diff;
+	float depth_at_diff;
+
+
 	/* LLPM path descriptors */
 	// local features
 	float path_weight; /**/

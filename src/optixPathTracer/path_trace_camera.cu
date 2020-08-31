@@ -142,7 +142,7 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.albedo_at_first = prd.albedo;
 			sr.normal_at_first = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
-			sr.depth_at_first = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
+			sr.depth_at_first = dot(prd.normal, prd.normal) ? prd.ray_dist * depth_norm : -0.1f;
 			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
 		}
@@ -160,7 +160,15 @@ RT_PROGRAM void pinhole_camera()
 		{
 			sr.albedo = prd.albedo;
 			sr.normal = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
-			sr.depth = prd.hasHit ? prd.ray_dist * depth_norm : -0.1f;
+			sr.depth = dot(prd.normal, prd.normal) != 0 ? prd.ray_dist * depth_norm : -0.1f;
+		}
+
+		// KPCN
+		if (prd.is_first_diffuse || (sr.depth_at_diff == 0.0f && !prd.hasHit))
+		{
+			sr.albedo_at_diff = prd.albedo;
+			sr.normal_at_diff = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
+			sr.depth_at_diff = dot(prd.normal, prd.normal) != 0 ? prd.ray_dist * depth_norm : -0.1f;
 		}
 
 		if (!prd.hasHit)

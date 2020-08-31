@@ -30,6 +30,8 @@ def main():
     if len(arr.shape) == 4:
         MAX_DEPTH = 5
 
+
+        """ SBMC features """
         subpixel_x = arr[:,:,:,0]
         subpixel_y = arr[:,:,:,1]
         radiance = arr[:,:,:,2:5]
@@ -48,14 +50,23 @@ def main():
         light_directions = arr[:,:,:,24+(MAX_DEPTH+1)*4:24+(MAX_DEPTH+1)*6]
         bounce_types = arr[:,:,:,24+(MAX_DEPTH+1)*6:24+(MAX_DEPTH+1)*7]
 
-        path_weight = arr[:,:,:,24+(MAX_DEPTH+1)*7]
-        radiance_wo_weight = arr[:,:,:,25+(MAX_DEPTH+1)*7:28+(MAX_DEPTH+1)*7]
-        light_intensity = arr[:,:,:,28+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*7]
 
-        throughputs = arr[:,:,:,31+(MAX_DEPTH+1)*7:31+(MAX_DEPTH+1)*10]
-        roughnesses = arr[:,:,:,31+(MAX_DEPTH+1)*10:31+(MAX_DEPTH+1)*11]
+        """ KPCN features """
+        albedo_at_diff = arr[:,:,:,24+(MAX_DEPTH+1)*7:27+(MAX_DEPTH+1)*7]
+        normal_at_diff = arr[:,:,:,27+(MAX_DEPTH+1)*7:30+(MAX_DEPTH+1)*7]
+        depth_at_diff = arr[:,:,:,30+(MAX_DEPTH+1)*7]
 
 
+        """ LLPM features """
+        path_weight = arr[:,:,:,31+(MAX_DEPTH+1)*7]
+        radiance_wo_weight = arr[:,:,:,32+(MAX_DEPTH+1)*7:35+(MAX_DEPTH+1)*7]
+        light_intensity = arr[:,:,:,35+(MAX_DEPTH+1)*7:38+(MAX_DEPTH+1)*7]
+
+        throughputs = arr[:,:,:,38+(MAX_DEPTH+1)*7:38+(MAX_DEPTH+1)*10]
+        roughnesses = arr[:,:,:,38+(MAX_DEPTH+1)*10:38+(MAX_DEPTH+1)*11]
+
+
+        """ SBMC features 
         plt.imshow(np.mean(subpixel_x, 2), cmap='gray')
         plt.show()
         plt.imshow(np.mean(subpixel_y, 2), cmap='gray')
@@ -69,7 +80,7 @@ def main():
         plt.show()
         plt.imshow(LinearToSrgb(ToneMap(np.mean(radiance_specular, 2), 1.5)))
         plt.show()
-        
+        """
         plt.imshow(np.mean(albedo_at_first, 2))
         plt.show()
         plt.imshow(np.mean(albedo, 2))
@@ -82,6 +93,7 @@ def main():
         plt.show()
         plt.imshow(np.mean(depth, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
+        """
         plt.imshow(np.mean(visibility, 2), cmap='gray')
         plt.show()
         plt.imshow(np.mean(hasHit, 2), cmap='gray')
@@ -118,8 +130,18 @@ def main():
             plt.imshow(np.mean(light_directions[:,:,:,2*i+1], 2), cmap='binary')
         plt.show()
         plt.imshow(np.mean(bounce_types[:,:,:,0], 2), cmap='gray')
+        plt.show()"""
+
+
+        """ KPCN features """
+        plt.imshow(np.mean(albedo_at_diff, 2))
+        plt.show()
+        plt.imshow(np.mean(normal_at_diff * 0.5 + 0.5, 2))
+        plt.show()
+        plt.imshow(np.mean(depth_at_diff, 2), cmap='binary', vmax = np.max(depth), vmin = np.min(depth))
         plt.show()
 
+        """ LLPM features 
         plt.imshow((np.mean(path_weight, 2) / (1 + np.mean(path_weight, 2) / 1.5)) ** 0.45, cmap='gray')
         plt.show()
         radiance_wo_weight[:,:,:,0] /= path_weight + 0.00316
@@ -139,7 +161,7 @@ def main():
             plt.subplot(2,3,i+1)
             plt.title(str(i+1))
             plt.imshow((np.mean(roughnesses[:,:,:,i], 2) / (1 + np.mean(roughnesses[:,:,:,i], 2) / 1.5)) ** 0.45, cmap='binary')
-        plt.show()
+        plt.show()"""
 
 
 if __name__ == '__main__':

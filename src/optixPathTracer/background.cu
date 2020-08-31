@@ -100,6 +100,7 @@ RT_PROGRAM void miss()
 	prd.ray_dist = -1.0f;
 	prd.hasHit = false;
 	prd.is_first_non_specular = false;
+	prd.is_first_diffuse = false;
 
 	prd.done = true;
 }
