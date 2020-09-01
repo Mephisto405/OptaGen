@@ -14,7 +14,6 @@ parser.add_argument('--root', type=str, required=True, help='directory which con
 parser.add_argument('--hdr', type=str, required=True, help='directory containing all hdr environmental map files to use.')
 parser.add_argument('--save', type=str, required=True, help='parent directory to save patches and reference images.')
 parser.add_argument('--num', type=int, required=False, default=4, help='total number of patches to generate.')
-parser.add_argument('--spp', type=int, required=False, default=4, help='sample per pixel.')
 parser.add_argument('--mspp', type=int, required=False, default=1024, help='maximum number of sample per pixel to render the reference image.')
 parser.add_argument('--roc', type=float, required=False, default=0.9, help='if the `rate of change` of relMSE is higher than this value, stop rendering the reference image.')
 parser.add_argument('--ckp_s', type=str, required=False, default="", help='start from this scene (e.g., bedroom).')
@@ -35,8 +34,6 @@ gt_dir = path.join(args.save, 'gt')
 if not os.path.isdir(gt_dir):
     os.mkdir(gt_dir)
 assert args.num >= 10, 'NUM < 10.'
-assert args.spp >= 1 and args.spp <= 32, 'SPP < 1 or SPP > 32. CUDA memory error might occur.'
-assert args.mspp >= args.spp and args.mspp <= 1000000, 'MSPP < 1000 or MSPP > 1000000.'
 assert args.roc > 0.0 and args.roc < 1.0, 'ROC <= 0.0 or ROC >= 1.0.'
 
 ##
@@ -84,13 +81,12 @@ for scene in scenes:
             '-d', args.hdr,
             '-i', path.join(input_dir, scene.split('\\')[-2] + '.npy'),
             '-o', path.join(gt_dir, scene.split('\\')[-2] + '.npy'),
-            '-n', str(patches_per_scenes), #str(NUMS[i]),
+            '-n', str(patches_per_scenes),
             '-c', str(args.ckp_i),
-            '-p', str(args.spp),
             '-m', str(args.mspp),
             '-r', str(args.roc),
-            '-w', "640",
-            '-v', "0",
+            '-w', '1280',
+            '-v', '0',
             '--device', str(args.device)
         ]
     

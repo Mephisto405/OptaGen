@@ -1104,6 +1104,87 @@ void printUsageAndExit()
 }
 
 
+void writeBuffersToNpy(std::string filename, optix::Buffer radiance, optix::Buffer diffuse, optix::Buffer albedo)
+{
+	GLsizei width, height;
+	RTsize buffer_width, buffer_height;
+
+	float *data_rad, *data_dif, *data_alb;
+	RT_CHECK_ERROR(rtBufferMap(radiance->get(), (void**)&data_rad));
+	RT_CHECK_ERROR(rtBufferMap(diffuse->get(), (void**)&data_dif));
+	RT_CHECK_ERROR(rtBufferMap(albedo->get(), (void**)&data_alb));
+
+	RT_CHECK_ERROR(rtBufferGetSize2D(radiance->get(), &buffer_width, &buffer_height));
+	width = static_cast<GLsizei>(buffer_width);
+	height = static_cast<GLsizei>(buffer_height);
+
+	RTformat form_rad, form_dif, form_alb;
+	RT_CHECK_ERROR(rtBufferGetFormat(radiance->get(), &form_rad));
+	RT_CHECK_ERROR(rtBufferGetFormat(diffuse->get(), &form_dif));
+	RT_CHECK_ERROR(rtBufferGetFormat(albedo->get(), &form_alb));
+
+	if (form_rad == RT_FORMAT_FLOAT4 && form_dif == RT_FORMAT_FLOAT3 && form_alb == RT_FORMAT_FLOAT3)
+	{
+		std::vector<float> pix(width * height * 9);
+
+		for (int j = height - 1; j >= 0; --j)
+		{
+			float* dst = &pix[0] + (9 * width*(height - 1 - j));
+			float* src_rad = data_rad + 4 * width*j;
+			float* src_dif = data_dif + 3 * width*j;
+			float* src_alb = data_alb + 3 * width*j;
+
+			for (int i = 0; i < width; i++)
+			{
+                // radiance reference
+				for (int elem = 0; elem < 3; ++elem)
+				{
+					float p = *src_rad++;
+					float clamped = p < 0.0f ? 0.0 : p;
+					*dst++ = p;
+				}
+
+				// skip alpha (padding)
+				src_rad++;
+
+                // diffuse radiance
+				for (int elem = 0; elem < 3; ++elem)
+				{
+					float p = *src_dif++;
+					float clamped = p < 0.0f ? 0.0 : p;
+					*dst++ = p;
+				}
+
+                // albedo at the first diffuse bounce
+				for (int elem = 0; elem < 3; ++elem)
+				{
+					float p = *src_alb++;
+					float clamped = p < 0.0f ? 0.0 : p;
+					*dst++ = p;
+				}
+			}
+		}
+
+		cnpy::npy_save(
+			filename,
+			&pix[0],
+			{ buffer_width, buffer_height, 9 },
+			"w");
+	}
+	else
+	{
+		fprintf(stderr, "Unrecognized buffer data type or format.\n");
+		exit(2);
+	}
+
+	RT_CHECK_ERROR(rtBufferUnmap(radiance->get()));
+	RT_CHECK_ERROR(rtBufferUnmap(diffuse->get()));
+	RT_CHECK_ERROR(rtBufferUnmap(albedo->get()));
+
+	std::cerr << "[Output] " << filename << std::endl;
+}
+
+
 void writeBufferToNpy(std::string filename, optix::Buffer buffer)
 {
 	GLsizei width, height;
@@ -1189,13 +1270,35 @@ void writeBufferToNpy(std::string filename, optix::Buffer buffer)
 			}
 		}
 
-		cnpy::npy_save(
-			filename,
-			&pix[0],
-			{ buffer_width, buffer_height,
-			(size_t)MAX_SAMPLES,
-			(size_t)feat_dim },
-			"w");
+		if ((MAX_SAMPLES * feat_dim / 1024.f) * (width / 1024.f) * (height / 1024.f) * 4 > 3.0f)
+		{
+            // there is a bug where the saving does not end when the size of the npy file exceeds about 3GB
+		    cnpy::npy_save(
+				filename.substr(0, filename.find('.')) + "_a.npy",
+			    &pix[0],
+			    { buffer_width/2, buffer_height,
+			    (size_t)MAX_SAMPLES,
+			    (size_t)feat_dim },
+			    "w");
+
+		    cnpy::npy_save(
+			    filename.substr(0, filename.find('.')) + "_b.npy",
+			    &pix[width / 2 * height * MAX_SAMPLES * feat_dim],
+			    { buffer_width/2, buffer_height,
+			    (size_t)MAX_SAMPLES,
+			    (size_t)feat_dim },
+			    "w");
+		}
+		else
+		{
+			cnpy::npy_save(
+				filename,
+				&pix[0],
+				{ buffer_width, buffer_height,
+				(size_t)MAX_SAMPLES,
+				(size_t)feat_dim },
+				"w");
+		}
 	}
 	else
 	{
@@ -1658,13 +1761,10 @@ int main(int argc, char** argv)
 					}
 					std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "s\n";
 
-					writeBufferToNpy(out_file, getOutputBuffer());
-                    
 					if (mode == M_ALL)
-					{
-						writeBufferToNpy(out_file.substr(0, out_file.find_last_of(".")) + "_dif.npy", getDiffuseBuffer());
-						writeBufferToNpy(out_file.substr(0, out_file.find_last_of(".")) + "_alb.npy", getAlbedoBuffer());
-					}
+						writeBuffersToNpy(out_file, getOutputBuffer(), getDiffuseBuffer(), getAlbedoBuffer());
+					else
+						writeBufferToNpy(out_file, getOutputBuffer());
 				}
 
 				destroyContext();
@@ -1744,7 +1844,11 @@ int main(int argc, char** argv)
 						std::cerr << "[Elapsed time] (ref) " << sutil::currentTime() - startTime << "\n";
 
 						out_fn = out_file.substr(0, out_file.find('.')) + "_" + std::to_string(r) + ".npy";
-						writeBufferToNpy(out_fn, getOutputBuffer());
+
+						if (mode == M_ALL)
+							writeBuffersToNpy(out_fn, getOutputBuffer(), getDiffuseBuffer(), getAlbedoBuffer());
+						else
+						    writeBufferToNpy(out_fn, getOutputBuffer());
 					}
 				}
 
