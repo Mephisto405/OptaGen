@@ -18,6 +18,21 @@ def LinearToSrgb(c):
     kInvGamma = 1.0 / 2.2
     return np.clip(c ** kInvGamma, 0.0, 1.0)
 
+cnt = 0
+for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
+    for name in files:
+        feat_a = np.load(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_a.npy")
+        feat_b = np.load(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_b.npy")
+
+        feat_b = np.concatenate((feat_a, feat_b), axis=0)
+        np.save(os.path.join("D:\\LLPM\\train\\input", name), feat_b)
+        plt.imsave(os.path.join("D:\\LLPM\\train\\input_imgs", name)[:-3]+"png", feat_b[:,:,:,8:11].mean(2))
+        
+        os.remove(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_a.npy")
+        os.remove(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_b.npy")
+        
+        cnt += 1
+print(cnt)
 
 """
 cnt = 0
@@ -32,7 +47,6 @@ for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
             plt.imsave(os.path.join("D:\\LLPM\\train\\gt_imgs", name)[:-3]+"png", LinearToSrgb(ToneMap(img_np)))
             cnt += 1
 print(cnt)
-"""
 
 cnt = 0
 for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
@@ -48,6 +62,7 @@ for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
             cnt += 1
 print(cnt)
 
+"""
 """
 for root, dirs, files, in os.walk("D:\\p-buffer\\train\\input", topdown=False):
     for name in files:
