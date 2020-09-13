@@ -65,6 +65,8 @@ def main():
         throughputs = arr[:,:,:,38+(MAX_DEPTH+1)*7:38+(MAX_DEPTH+1)*10]
         roughnesses = arr[:,:,:,38+(MAX_DEPTH+1)*10:38+(MAX_DEPTH+1)*11]
 
+        print(np.max(roughnesses))
+        print(np.min(roughnesses))
 
         """ SBMC features 
         plt.imshow(np.mean(subpixel_x, 2), cmap='gray')
