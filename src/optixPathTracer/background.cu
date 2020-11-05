@@ -36,7 +36,8 @@
 using namespace optix;
 
 rtDeclareVariable(int, sysNumberOfLights, , );
-
+rtDeclareVariable(float, env_bright, , );
+rtDeclareVariable(float, env_degree, , );
 rtDeclareVariable(float3, background_light, , ); // horizon color
 rtDeclareVariable(float3, background_dark, , );  // zenith color
 rtDeclareVariable(float3, up, , );               // global up vector
@@ -73,10 +74,10 @@ RT_PROGRAM void miss()
 		float3 dir = normalize(ray.direction); // might be unnecessary
 		float theta = acosf(-dir.y); // theta == 0.0f is south pole, theta == M_PIf is north pole
 		float phi = (dir.x == 0.0f && dir.z == 0.0f) ? 0.0f : atan2f(dir.x, -dir.z); // Starting on positive z-axis going around clockwise (to negative x-axis)
-		float u = (M_PI + phi) * (0.5f * M_1_PIf) /* + 0.5f */;
+		float u = (M_PI * env_degree + phi) * (0.5f * M_1_PIf) /* + 0.5f */;
 		float v = theta * M_1_PIf;
 
-		const float3 emission = make_float3(optix::rtTex2D<float4>(light.idEnvironmentTexture, u, v)); // env map support
+		const float3 emission = env_bright * make_float3(optix::rtTex2D<float4>(light.idEnvironmentTexture, u, v)); // env map support
 
 		float misWeight = 1.0f;
 		if (!prd.specularBounce && prd.depth != 0)

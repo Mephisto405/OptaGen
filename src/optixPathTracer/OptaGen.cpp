@@ -237,6 +237,9 @@ void createContext(bool use_pbo, unsigned int max_depth, unsigned int num_frames
 	// because rays are not shot recursively.
 	context->setStackSize(800);
 
+	context["env_bright"]->setFloat(scene->properties.env_bright);
+	context["env_degree"]->setFloat(scene->properties.env_degree);
+
 	// Note: high max depth for reflection and refraction through glass
 	context["cutoff_color"]->setFloat(0.0f, 0.0f, 0.0f);
 	context["frame"]->setUint(0u);

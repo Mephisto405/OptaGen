@@ -17,7 +17,15 @@ misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.*/
 
 #include "sceneLoader.h"
+#include "rapidxml-1.13\rapidxml.hpp"
 #include <filesystem>
+#include <fstream>
+#include <vector>
+#include <cctype>
+#include <locale>
+
+using namespace std;
+using namespace rapidxml;
 
 static const int kMaxLineLength = 2048;
 
@@ -34,7 +42,86 @@ float clip(float &x, float min, float max)
 	return x;
 }
 
+string getExtension(const string& filename)
+{
+	// Get the filename extension                                                
+	string::size_type extension_index = filename.find_last_of(".");
+	string ext = extension_index != string::npos ?
+		filename.substr(extension_index + 1) :
+		string();
+	locale loc;
+	for (string::size_type i = 0; i < ext.length(); ++i)
+		ext[i] = tolower(ext[i], loc);
+
+	return ext;
+}
+
 Scene* LoadScene(const char* filename)
+{
+	string ext = getExtension(string(filename));
+	assert(((void)"Extension `" + ext + "` is not supported.", 
+		(ext == "scene") || (ext == "xml")));
+	
+	if (ext == "scene")
+		return LoadSceneSCENE(filename);
+	else
+		return LoadSceneXML(filename);
+}
+
+Scene* LoadSceneXML(const char* filename)
+{
+	Scene *scene = new Scene;
+
+	basic_ifstream<char> xml_file(filename);
+	xml_file.seekg(0, ios::end);
+	unsigned int size = xml_file.tellg();
+	xml_file.seekg(0);
+
+	vector<char> xml_data(size + 1);
+	xml_data[size] = 0;
+	xml_file.read(&xml_data.front(), (streamsize)size);
+
+	xml_document<char> xml_doc;
+	xml_doc.parse<0>(&xml_data.front());
+
+	char* name;
+	char* value;
+	xml_node<char>* item;
+	xml_node<char>* subitem;
+	xml_node<char>* root = xml_doc.first_node();
+
+	for (item = root->first_node(); item; item = item->next_sibling())
+	{
+		name = item->name();
+		printf("%s \n", name);
+
+		for (subitem = item->first_node(); subitem; subitem = subitem->next_sibling())
+		{
+			name = subitem->name();
+			printf("%s \n", name);
+
+			for (xml_attribute<> *attr = subitem->first_attribute();
+				attr; attr = attr->next_attribute())
+			{
+				printf("%s: %s \n", attr->name(), attr->value());
+			}
+		}
+	}
+
+	/*
+	item = root->first_node();
+	while (!item)
+	{
+
+	}
+	*/
+
+	xml_file.close();
+
+	return scene;
+}
+
+Scene* LoadSceneSCENE(const char* filename)
 {
 	Scene *scene = new Scene;
 	int tex_id = 0;
@@ -65,7 +152,7 @@ Scene* LoadScene(const char* filename)
 		//--------------------------------------------
 		// Material
 
-		if (sscanf(line, "material %s", name) == 1)
+		if (sscanf(line, "material %[^\t\n]", name) == 1)
 		{
 			printf("%s", line);
 
@@ -80,9 +167,17 @@ Scene* LoadScene(const char* filename)
 				if (strchr(line, '}'))
 					break;
 
-				sscanf(line, " name %s", name);
-				sscanf(line, " color %f %f %f", &material.color.x, &material.color.y, &material.color.z);
-				sscanf(line, " albedoTex %s", &tex_name);
+				sscanf(line, " name %[^\t\n]", name);
+				int col_num = sscanf(line, " color %f %f %f", &material.color.x, &material.color.y, &material.color.z);
+				assert(((void)"Color should be the form of `float` or `float float float`.",
+					(col_num == 1) || (col_num == 3)));
+				if (col_num == 1)
+				{
+					material.color.y = material.color.x;
+					material.color.z = material.color.x;
+				}
+				sscanf(line, " color %f", &material.color.x, &material.color.y, &material.color.z);
+				sscanf(line, " albedoTex %[^\t\n]", &tex_name);
 				sscanf(line, " emission %f %f %f", &material.emission.x, &material.emission.y, &material.emission.z);
 
 				sscanf(line, " metallic %f", &material.metallic);
@@ -251,9 +346,11 @@ Scene* LoadScene(const char* filename)
 					prop.init_lookat = true;
 				if (sscanf(line, " up %f %f %f", &prop.camera_up.x, &prop.camera_up.y, &prop.camera_up.z) != 0)
 					prop.init_up = true;
-				if (sscanf(line, " envmap %s", envmap_fn) == 1) {
+				if (sscanf(line, " envmap %[^\t\n]", envmap_fn) == 1) {
 					prop.envmap_fn = std::string(envmap_fn);
 				}
+				sscanf(line, " env_bright %f", &prop.env_bright);
+				sscanf(line, " env_degree %f", &prop.env_degree);
 
 			}
 
@@ -324,7 +421,7 @@ Scene* LoadScene(const char* filename)
 				*/
 
 
-				if (sscanf(line, " file %s", path) == 1)
+				if (sscanf(line, " file %[^\t\n]", path) == 1)
 				{
 					scene->mesh_names.push_back(scene->dir + path);
 				}
@@ -338,7 +435,7 @@ Scene* LoadScene(const char* filename)
 					xform = optix::Matrix4x4(data);
 				}
 
-				if (sscanf(line, " material %s", path) == 1)
+				if (sscanf(line, " material %[^\t\n]", path) == 1)
 				{
 					// look up material in dictionary
 					if (materials_map.find(path) != materials_map.end())

@@ -58,6 +58,10 @@ set(sources
   sutilapi.h
   tinyobjloader/tiny_obj_loader.cc
   tinyobjloader/tiny_obj_loader.h
+  rapidxml-1.13/rapidxml.hpp
+  rapidxml-1.13/rapidxml_iterators.hpp
+  rapidxml-1.13/rapidxml_print.hpp
+  rapidxml-1.13/rapidxml_utils.hpp
   )
 
 if(OPENGL_FOUND AND NOT APPLE)

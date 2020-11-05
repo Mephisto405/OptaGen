@@ -30,11 +30,11 @@ with open(args.src, newline='') as lines:
     lines = list(lines)
     i = 0
     while i < len(lines):
-        if '<integrator' in lines[i]:
+        if '<sensor' in lines[i]:
             writefile.write('properties\n')
             writefile.write('{\n')
             while '</sensor>' not in lines[i]:
-                if 'maxDepth' in lines[i]:
+                if 'max_depth' in lines[i]:
                     writefile.write('\tmax_depth {}\n'.format(getValue(lines[i], 'value')))
                 if 'width' in lines[i]:
                     writefile.write('\twidth {}\n'.format(getValue(lines[i], 'value')))
@@ -73,7 +73,9 @@ with open(args.src, newline='') as lines:
                     while '<rgb' not in lines[i] and '<texture' not in lines[i]:
                         i += 1
                     if '<rgb' in lines[i]:
-                        rgb = getValue(lines[i], 'value').split(', ')
+                        rgb = getValue(lines[i], 'value').split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                     elif '<texture' in lines[i]:
@@ -93,8 +95,15 @@ with open(args.src, newline='') as lines:
                         i += 1
                     
                     params = param_dict.keys()
+                    if '<texture' in lines[i]:
+                        while 'filename' not in lines[i]:
+                            i += 1
+                        path = getValue(lines[i], 'value')
+                        writefile.write('\talbedoTex {}\n'.format(path))
                     if 'diffuseReflectance' in params:
-                        rgb = param_dict['diffuseReflectance'].split(', ')
+                        rgb = param_dict['diffuse_reflectance'].split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                     writefile.write('\troughness 0.0\n')
@@ -109,8 +118,10 @@ with open(args.src, newline='') as lines:
                                 i += 1
                             path = getValue(lines[i], 'value')
                             writefile.write('\talbedoTex {}\n'.format(path))
-                        elif 'diffuseReflectance' in lines[i]:
-                            rgb = [float(c) for c in getValue(lines[i], 'value').split(', ')]
+                        elif 'diffuse_reflectance' in lines[i]:
+                            rgb = [float(c) for c in getValue(lines[i], 'value').split(' ')]
+                            if len(rgb) == 1:
+                                rgb = rgb + rgb + rgb
                             writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                         i += 1
 
@@ -126,8 +137,15 @@ with open(args.src, newline='') as lines:
                     while '</bsdf' not in lines[i]:
                         if 'alpha' in lines[i]:
                             writefile.write('\troughness {}\n'.format(getValue(lines[i], 'value')))
-                        if 'specularReflectance' in lines[i]:
-                            rgb = getValue(lines[i], 'value').split(', ')
+                        elif '<texture' in lines[i]:
+                            while 'filename' not in lines[i]:
+                                i += 1
+                            path = getValue(lines[i], 'value')
+                            writefile.write('\talbedoTex {}\n'.format(path))
+                        elif 'specular_reflectance' in lines[i]:
+                            rgb = getValue(lines[i], 'value').split(' ')
+                            if len(rgb) == 1:
+                                rgb = rgb + rgb + rgb
                             rgb = [float(c) for c in rgb]
                             writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                         i += 1
@@ -146,15 +164,19 @@ with open(args.src, newline='') as lines:
                     
                     params = param_dict.keys()
                     writefile.write('\tintIOR {:.6f}\n'
-                        .format(float(param_dict['intIOR']) if 'intIOR' in params else '1.5046'))
+                        .format(float(param_dict['int_ior']) if 'int_ior' in params else 1.5046))
                     writefile.write('\textIOR {:.6f}\n'
-                        .format(float(param_dict['extIOR']) if 'extIOR' in params else '1.000277'))
-                    if 'specularReflectance' in params:
-                        rgb = param_dict['specularReflectance'].split(', ')
+                        .format(float(param_dict['ext_ior']) if 'ext_ior' in params else 1.000277))
+                    if 'specular_reflectance' in params:
+                        rgb = param_dict['specular_reflectance'].split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
-                    elif 'specularTransmittance' in params:
-                        rgb = param_dict['specularTransmittance'].split(', ')
+                    elif 'specular_transmittance' in params:
+                        rgb = param_dict['specular_transmittance'].split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                     else:
@@ -185,15 +207,19 @@ with open(args.src, newline='') as lines:
                     else:
                         writefile.write('\troughness {}\n'.format(1.0))
                     writefile.write('\tintIOR {:.6f}\n'
-                        .format(float(param_dict['intIOR']) if 'intIOR' in params else '1.5046'))
+                        .format(float(param_dict['int_ior']) if 'int_ior' in params else 1.5046))
                     writefile.write('\textIOR {:.6f}\n'
-                        .format(float(param_dict['extIOR']) if 'extIOR' in params else '1.000277'))
-                    if 'specularReflectance' in params:
-                        rgb = param_dict['specularReflectance'].split(', ')
+                        .format(float(param_dict['ext_ior']) if 'ext_ior' in params else 1.000277))
+                    if 'specular_reflectance' in params:
+                        rgb = param_dict['specular_reflectance'].split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
-                    elif 'specularTransmittance' in params:
-                        rgb = param_dict['specularTransmittance'].split(', ')
+                    elif 'specular_transmittance' in params:
+                        rgb = param_dict['specular_transmittance'].split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\tcolor {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                     else:
@@ -261,7 +287,9 @@ with open(args.src, newline='') as lines:
                     if '<emitter' in lines[i]:
                         while '<rgb' not in lines[i]:
                             i += 1
-                        rgb = getValue(lines[i], 'value').split(', ')
+                        rgb = getValue(lines[i], 'value').split(' ')
+                        if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                         rgb = [float(c) for c in rgb]
                         writefile.write('\temission {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                     i += 1
@@ -295,7 +323,9 @@ with open(args.src, newline='') as lines:
                 else:
                     writefile.write('\tposition 0.0 0.0 0.0\n')
                 if 'radiance' in params:
-                    rgb = param_dict['radiance'].split(', ')
+                    rgb = param_dict['radiance'].split(' ')
+                    if len(rgb) == 1:
+                            rgb = rgb + rgb + rgb
                     rgb = [float(c) for c in rgb]
                     writefile.write('\temission {:.6f} {:.6f} {:.6f}\n'.format(*rgb))
                 else:
@@ -307,9 +337,9 @@ with open(args.src, newline='') as lines:
                 print(isEmitter)
                 print(type)
                 print(emit_type)
-                raise NotImplementedError('Non-rectangle type emitter is not implemented yet')
+                #raise NotImplementedError('Non-rectangle type emitter is not implemented yet')
             writefile.write('}\n\n')
         if '<emitter' in lines[i]:
-            raise NotImplementedError('Env map is not implemented yet')
+            print('emitter type:', getValue(lines[i], 'type'), 'required')
         
         i += 1

@@ -56,3 +56,5 @@ struct Scene
 };
 
 Scene* LoadScene(const char* filename);
+Scene* LoadSceneXML(const char* filename);
+Scene* LoadSceneSCENE(const char* filename);

@@ -19,32 +19,49 @@ def LinearToSrgb(c):
     return np.clip(c ** kInvGamma, 0.0, 1.0)
 
 cnt = 0
-for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
+for root, dirs, files in os.walk("D:\\LLPM\\test\\input", topdown=False):
     for name in files:
-        feat_a = np.load(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_a.npy")
-        feat_b = np.load(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_b.npy")
+        if not name.endswith('_a.npy'):
+            continue
+
+        feat_a = np.load(os.path.join("D:\\LLPM\\test\\input", name))
+        feat_b = np.load(os.path.join("D:\\LLPM\\test\\input", name)[:-6]+"_b.npy")
 
         feat_b = np.concatenate((feat_a, feat_b), axis=0)
-        np.save(os.path.join("D:\\LLPM\\train\\input", name), feat_b)
-        plt.imsave(os.path.join("D:\\LLPM\\train\\input_imgs", name)[:-3]+"png", feat_b[:,:,:,8:11].mean(2))
+        np.save(os.path.join("D:\\LLPM\\test\\input", name)[:-6]+".npy", feat_b)
+
+        cnt += 1
+print(cnt)
+
+
+"""
+cnt = 0
+for root, dirs, files in os.walk("D:\\LLPM\\test\\gt", topdown=False):
+    for name in files:
+        feat_a = np.load(os.path.join("D:\\LLPM\\test\\input", name)[:-4]+"_a.npy")
+        feat_b = np.load(os.path.join("D:\\LLPM\\test\\input", name)[:-4]+"_b.npy")
+
+        feat_b = np.concatenate((feat_a, feat_b), axis=0)
+        np.save(os.path.join("D:\\LLPM\\test\\input", name), feat_b)
+        plt.imsave(os.path.join("D:\\LLPM\\test\\input_imgs", name)[:-3]+"png", feat_b[:,:,:,8:11].mean(2))
         
-        os.remove(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_a.npy")
-        os.remove(os.path.join("D:\\LLPM\\train\\input", name)[:-4]+"_b.npy")
+        os.remove(os.path.join("D:\\LLPM\\test\\input", name)[:-4]+"_a.npy")
+        os.remove(os.path.join("D:\\LLPM\\test\\input", name)[:-4]+"_b.npy")
         
         cnt += 1
 print(cnt)
 
-"""
+
 cnt = 0
-for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
+for root, dirs, files in os.walk("D:\\LLPM\\test\\gt", topdown=False):
     for name in files:
         npy_fn = os.path.join(root, name)
-        png_fn = os.path.join("D:\\LLPM\\train\\gt_imgs", name)[:-3]+"png"
+        png_fn = os.path.join("D:\\LLPM\\test\\gt_imgs", name)[:-3]+"png"
         if os.path.isfile(png_fn):
             continue
         else:
             img_np = np.load(npy_fn)[:,:,:3]
-            plt.imsave(os.path.join("D:\\LLPM\\train\\gt_imgs", name)[:-3]+"png", LinearToSrgb(ToneMap(img_np)))
+            plt.imsave(os.path.join("D:\\LLPM\\test\\gt_imgs", name)[:-3]+"png", LinearToSrgb(ToneMap(img_np)))
             cnt += 1
 print(cnt)
 

@@ -5,24 +5,35 @@ import numpy as np
 import os.path as path
 from subprocess import check_output, STDOUT, CalledProcessError
 
-recipe = {
-    'living-room-3': (9, 32000),
+recipe1 = {
+    #'bathroom': (1, 64*1024),
+    #'car2': (1, 64*1024),
+    'teapot': (1, 128*1024),
 }
+
+recipe2 = {
+    'car': (1, 128*1024),
+    #'chair': (1, 16*1024),
+    #'gharbi': (1, 16*1024),
+    #'tableware': (1, 64*1024),
+}
+
+recipe = recipe1
 
 for scene in recipe:
     print(scene)
     cmd = [
-            'C:\\Users\\Dorian\\cuda_datagen\\OptaGen\\build\\bin\\Release\\OptaGen.exe',
+            'OptaGen.exe',
             '-M', '2',
-            '-s', 'C:\\Users\\Dorian\\scenes\\optagen\\train\\{}\\scene.scene'.format(scene),
-            '-d', 'C:\\Users\\Dorian\\scenes\\optagen\\hdri',
-            '-i', 'D:\\LLPM\\train\\input\\{}.npy'.format(scene),
-            '-o', 'D:\\LLPM\\train\\gt\\{}.npy'.format(scene),
+            '-s', 'C:\\Users\\dorian\\scenes\\optagen\\test\\{}\\scene.scene'.format(scene),
+            '-d', 'C:\\Users\\dorian\\scenes\\optagen\\hdri',
+            '-i', 'D:\\LLPM\\test\\input\\{}.npy'.format(scene),
+            '-o', 'D:\\LLPM\\test\\gt\\{}.npy'.format(scene),
             '-n', str(recipe[scene][0]),
             #TODO(iycho) should change this part
-            '-c', '22',
+            #'-c', '22',
             '-m', str(recipe[scene][1]),
-            '-w', '1280',
+            '-w', '1024',
             '-v', '0',
             '--device', '0'
         ]
