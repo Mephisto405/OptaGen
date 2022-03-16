@@ -155,6 +155,9 @@ RT_PROGRAM void closest_hit()
 	prd.normal = ffnormal; // camera-space normal
 	prd.hasHit = true;
 
+	// new
+	prd.world_pos = state.fhp;
+
 	// Emissive radiance
 	prd.radiance += mat.emission * prd.throughput;
 	// prd.radiance_diffuse += but we don't have emissive material

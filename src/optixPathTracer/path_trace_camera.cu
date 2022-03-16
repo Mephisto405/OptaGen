@@ -132,6 +132,7 @@ RT_PROGRAM void pinhole_camera()
 
 	/* Main rendering loop */
 	float3 result = make_float3(0.0f);
+	float3 albedo = make_float3(0.0f);
 	for (;;) {
 		optix::Ray ray(ray_origin, ray_direction, 0 /*ray type*/, scene_epsilon);
 		prd.wo = -ray.direction;
@@ -147,6 +148,11 @@ RT_PROGRAM void pinhole_camera()
 			sr.depth_at_first = dot(prd.normal, prd.normal) ? prd.ray_dist * depth_norm : -0.1f;
 			sr.visibility = prd.hasHit ? (!prd.inShadow ? 1.0f : 0.0f) : 0.0f;
 			sr.hasHit = prd.hasHit ? 1.0f : 0.0f;
+			//new
+			// sr.normals[prd.depth] = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
+			sr.world_pos[prd.depth] = make_float3(dot(prd.world_pos, Cam_x), dot(prd.world_pos, Cam_y), dot(prd.world_pos, Cam_z));
+			// sr.albedos[prd.depth] = prd.albedo;
+			// sr.radiances[prd.depth] = prd.radiance;
 		}
 		
 		// TODO(iycho): dirty code
@@ -163,14 +169,27 @@ RT_PROGRAM void pinhole_camera()
 			sr.albedo = prd.albedo;
 			sr.normal = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
 			sr.depth = dot(prd.normal, prd.normal) != 0 ? prd.ray_dist * depth_norm : -0.1f;
+			// new
+			// sr.normals[prd.depth] = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
+			sr.world_pos[prd.depth] = make_float3(dot(prd.world_pos, Cam_x), dot(prd.world_pos, Cam_y), dot(prd.world_pos, Cam_z));
+			// sr.albedos[prd.depth] = prd.albedo;
+			// sr.radiances[prd.depth] = prd.radiance;
 		}
 
 		// KPCN
-		if (prd.is_first_diffuse || (sr.depth_at_diff == 0.0f && !prd.hasHit))
+		// if (prd.is_first_diffuse || (sr.depth_at_diff == 0.0f && !prd.hasHit))
+		if (prd.is_first_diffuse || (!prd.hasHit))
 		{
 			sr.albedo_at_diff = prd.albedo;
+			albedo = prd.albedo;
 			sr.normal_at_diff = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
 			sr.depth_at_diff = dot(prd.normal, prd.normal) != 0 ? prd.ray_dist * depth_norm : -0.1f;
+			// new
+			// sr.normals[prd.depth] = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
+			sr.world_pos[prd.depth] = make_float3(dot(prd.world_pos, Cam_x), dot(prd.world_pos, Cam_y), dot(prd.world_pos, Cam_z));
+			// sr.albedos[prd.depth] = prd.albedo;
+			// sr.radiances[prd.depth] = prd.radiance;
+			
 		}
 
 		if (!prd.hasHit)
@@ -216,6 +235,12 @@ RT_PROGRAM void pinhole_camera()
 
 			sr.probabilities[prd.depth * 4] = prd.probabilities.x;
 			sr.probabilities[prd.depth * 4 + 1] = prd.probabilities.y;
+
+			// new
+			// sr.normals[prd.depth] = make_float3(dot(prd.normal, Cam_x), dot(prd.normal, Cam_y), dot(prd.normal, Cam_z));
+			sr.world_pos[prd.depth] = make_float3(dot(prd.world_pos, Cam_x), dot(prd.world_pos, Cam_y), dot(prd.world_pos, Cam_z));
+			// sr.albedos[prd.depth] = prd.albedo;
+			// sr.radiances[prd.depth] = prd.radiance;
 		}
 
 
@@ -241,12 +266,14 @@ RT_PROGRAM void pinhole_camera()
 	if (frame > 0) {
 		acc_val = lerp(acc_val, make_float4(result, 0.f), 1.0f / static_cast<float>(frame + 1));
 		acc_diffuse = lerp(acc_diffuse, sr.radiance_diffuse, 1.0f / static_cast<float>(frame + 1));
-		acc_albedo = lerp(acc_albedo, sr.albedo_at_diff, 1.0f / static_cast<float>(frame + 1));
+		// acc_albedo = lerp(acc_albedo, sr.albedo_at_diff, 1.0f / static_cast<float>(frame + 1));
+		acc_albedo = lerp(acc_albedo, albedo, 1.0f / static_cast<float>(frame + 1));
 	}
 	else {
 		acc_val = make_float4(result, 0.f);
 		acc_diffuse = sr.radiance_diffuse;
 		acc_albedo = sr.albedo_at_diff;
+		// acc_albedo = albedo;
 	}
 
 	//float4 val = LinearToSrgb(ToneMap(acc_val, 1.5));

@@ -53,4 +53,10 @@ struct SampleRecord
 	// per-vertex features
 	optix::float3 throughputs[(MAX_DEPTH + 1)]; /**/
 	float roughnesses[(MAX_DEPTH + 1)]; /**/
+
+	// new
+	// optix::float3 normals[(MAX_DEPTH + 1)];
+	optix::float3 world_pos[(MAX_DEPTH + 1)];
+	// optix::float3 albedos[(MAX_DEPTH + 1)];
+	// optix::float3 radiances[(MAX_DEPTH) + 1];
 };

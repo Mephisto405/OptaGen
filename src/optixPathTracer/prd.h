@@ -61,6 +61,8 @@ struct PerRayData_radiance
   optix::float3 light_directions;
   unsigned int bounce_type;
   float roughness;
+  // new
+  optix::float3 world_pos;
 };
 
 struct PerRayData_shadow

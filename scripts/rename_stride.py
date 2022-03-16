@@ -1,7 +1,7 @@
 import os
 
 cnt = 0
-for root, dirs, files in os.walk("D:\\LLPM\\train\\gt", topdown=False):
+for root, dirs, files in os.walk("D:\\p-buffer\\train\\gt", topdown=False):
     for name in files:
         a = name
         dst = a[:a.find('_')+1] + str(int(a[a.find('_')+1:a.find('.')]) + 40) + a[a.find('.'):]
